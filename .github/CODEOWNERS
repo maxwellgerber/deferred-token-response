@@ -1,0 +1,3 @@
+# Automatically generated CODEOWNERS
+# Regenerate with `make update-codeowners`
+draft-oauth-deferred-token-response.md frederik.krogsdal@idura.eu iam@gniero.com mgerber@twilio.com
