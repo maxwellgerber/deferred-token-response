@@ -213,7 +213,7 @@ originating grant's token request with `deferrable=true`, and the
 authorization server may respond with either a normal token response
 or a deferred response.
 
-~~~ aasvg
+~~~
 +--------+                            +-----+              +----------+
 |        |                            |     |              |          |
 |        |--(1) Auth Request--------->|     |              |          |
