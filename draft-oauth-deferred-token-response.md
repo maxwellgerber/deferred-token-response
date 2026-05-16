@@ -60,6 +60,7 @@ informative:
   RFC8628:
   RFC8705:
   ID-JAG: I-D.draft-ietf-oauth-identity-assertion-authz-grant
+  FIPA: I-D.draft-ietf-oauth-first-party-apps
   CIBA:
     target: https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html
     title: OpenID Connect Client-Initiated Backchannel Authentication Flow - Core 1.0
@@ -99,20 +100,19 @@ a token response or an error response.
 
 However, some authorization decisions cannot complete synchronously:
 
+- Fraud Prevention: Sensitive operations may trigger manual review by
+  parties other than the resource owner.
+
 - ID Verification: Users may submit copies of physical credentials
   during onboarding or step-up. Verification by the authorization server
   (or a third party acting on its behalf) can take hours.
-
-- Fraud Prevention: Sensitive operations may trigger manual review by
-  parties not yet involved in the OAuth flow, even after the resource
-  owner has consented.
 
 - Autonomous Agent Authorization: An agent acting on behalf of a user
   may request access beyond what was provisioned at enrollment,
   requiring out-of-band approval before the request can be granted.
 
 - Complex Authorization: Enterprise businesses often manage access
-  controls using multi-party governance and administration workflows.
+  controls using governance and administration workflows.
   Access requests may need to be approved by parties other than the
   resource owner.
 
@@ -123,7 +123,7 @@ whether) the request will eventually be approved.
 This specification defines a Deferred Token Response, in which the
 authorization server returns a `deferral_token` and a polling
 interval in place of an access token.
-The `deferral_token` represents the pending authorization request
+The `deferral_token` represents the pending token request
 and entitles the client to a final token response when the request
 resolves.
 The client either polls the token endpoint with the `deferral_token`,
@@ -167,7 +167,7 @@ polling interval
 deferred client notification endpoint
 : An HTTPS URI registered by the client at which it accepts callback
   notifications from the authorization server when a deferred request
-  resolves. Used interchangeably with "callback URI" in this document.
+  resolves.
 
 originating grant
 : The OAuth grant — for example, the Authorization Code Grant
@@ -188,30 +188,32 @@ The flow proceeds entirely through the originating grant's existing
 endpoints. A grant becomes deferred when:
 
 1. The client signals willingness to accept a deferred response by
-   including `deferrable=true` on every request that comprises the
-   originating grant.
-2. The authorization server elects, on a token endpoint request, to
-   return a deferred response in place of the normal token response.
-   The deferred response carries a `deferral_token` instead of an
-   access token.
+   including `deferrable=true` on the originating grant's token
+   endpoint request.
+2. The authorization server elects, on that token endpoint request,
+   to return a deferred response in place of the normal token
+   response. The deferred response carries a `deferral_token` instead
+   of an access token.
 3. The client polls the token endpoint with the `deferral_token`
    until the authorization server returns the final token response, or
    optionally receives a callback notification when the request
    resolves.
 
-For grants with an authorization-endpoint step — such as the
-Authorization Code Grant of {{OAUTH-2.1}} — the authorization endpoint
-behaves exactly as it would without DTR: the authorization server
-returns the same authorization response (for example, an authorization
-`code`) regardless of whether the request will be deferred. Deferral
-is decided and signaled only at the token endpoint.
-
-For grants that begin at the token endpoint — such as the Client
-Credentials Grant and the Refresh Token Grant of {{OAUTH-2.1}}, or
-Token Exchange {{RFC8693}} — the same is true: the client sends the
-originating grant's token request with `deferrable=true`, and the
-authorization server may respond with either a normal token response
-or a deferred response.
+For an originating grant with a preceding endpoint — for example, the
+authorization endpoint of the Authorization Code Grant of
+{{OAUTH-2.1}}, the device authorization endpoint of {{RFC8628}}, or
+the authorization challenge endpoint of {{FIPA}} — the client MAY also
+send `deferrable=true` on the preceding request as an advance hint.
+The hint allows the authorization server to commit to deferral-aware
+behavior before the token request — for example, by collecting different
+consent, by showing a different verification UX, or by selecting a different
+review path.
+An authorization server that acts on the hint depends on
+the client's intent at the token endpoint matching it; see
+{{pre-token-hints}}. The authorization server returns its grant's
+normal response to the preceding request (for example, an
+authorization `code`) regardless of whether the request will be
+deferred.
 
 ~~~
 +--------+                            +-----+              +----------+
@@ -260,7 +262,7 @@ that has not signaled willingness to accept one.
 This specification defines the `deferrable` request parameter for that
 purpose.
 
-## The `deferrable` Parameter
+## The `deferrable` Parameter {#the-deferrable-parameter}
 
 `deferrable`
 : OPTIONAL. A string whose value, when present, MUST be either the
@@ -272,13 +274,16 @@ purpose.
   authorization server MUST treat the request as if `deferrable=false`
   were supplied.
 
-The client sends `deferrable` on every request of the originating
-grant up to and including the token endpoint request that may yield a
-deferred response.
+The client signals opt-in to DTR by including `deferrable=true` on
+the originating grant's token endpoint request.
 
-Polling requests ({{token-endpoint-polling}}) are not part of this scope:
-they continue an already-deferred flow rather than initiating one,
-and do not carry the `deferrable` parameter.
+For an originating grant with a preceding endpoint — the authorization
+endpoint, the device authorization endpoint of {{RFC8628}}, the
+authorization challenge endpoint, or another endpoint introduced by a
+future extension — the client MAY additionally send `deferrable=true`
+on that preceding request as an advance hint to the authorization
+server. The semantics of the hint are defined in
+{{pre-token-hints}}.
 
 A client MAY discover authorization server support for this
 specification through the `deferred_token_response_supported`
@@ -288,21 +293,42 @@ that does not advertise support; such an authorization server
 should silently ignore the parameter and complete the request synchronously
 per its originating grant's rules.
 
-## Strict Equality of `deferrable` {#strict-equality-of-deferrable-across-requests}
+## Pre-Token Hints {#pre-token-hints}
 
-When the originating grant comprises more than one request, the value
-of `deferrable` MUST be identical across every such request. For the
-purposes of this comparison, an absent `deferrable` parameter is
-equivalent to `deferrable=false`.
-An authorization server that receives a request whose `deferrable`
-value does not match the value supplied in an earlier request of the
-same originating grant MUST reject the request with the error
-`invalid_request`.
+For an originating grant with a preceding endpoint, the client MAY
+send `deferrable=true` on that preceding request to inform the
+authorization server in advance that the grant may resolve to a
+deferred response at the token endpoint. The hint is optional: a
+client that omits it on the preceding request can still opt in at the
+token endpoint, and the authorization server MUST NOT reject a token
+request carrying `deferrable=true` solely because no hint was
+received earlier.
 
-The default behavior is fully synchronous: an originating grant in
-which every request carries `deferrable=false` (or omits the
-parameter) is processed identically to the same grant under
-{{OAUTH-2.1}}, with no DTR semantics applied.
+An authorization server MAY act on the hint by selecting a
+deferral-aware path for the originating grant — for example, by
+collecting different consent from the resource owner, by presenting a
+different verification UX, by routing the request to a review queue,
+or by altering its risk-analysis decision. An authorization server
+that does not use the hint MUST treat the preceding request as it
+would without DTR; the hint never alters the response shape of the
+preceding endpoint.
+
+A client that has sent `deferrable=true` on the preceding request
+MUST send `deferrable=true` on the resulting token request. If the
+client instead sends `deferrable=false` (or omits the parameter) at
+the token endpoint, the authorization server MUST proceed
+synchronously per the originating grant's rules; if the authorization
+server has already committed to deferral-aware behavior on the
+strength of the hint and cannot satisfy the synchronous request, it
+MUST reject the request with the error `invalid_request`.
+
+A client that did not send a hint MAY still send `deferrable=true` at
+the token endpoint, and the authorization server MAY return a
+deferred response.
+
+Polling requests ({{token-endpoint-polling}}) are not part of the
+originating grant; they continue an already-deferred flow rather than
+initiating one and MUST NOT carry the `deferrable` parameter.
 
 ## Authorization Server Discretion
 
@@ -327,32 +353,7 @@ the parameter itself.
 
 ## Examples
 
-Request to the authorization endpoint:
-
-~~~
-GET /authorize?response_type=code
-  &client_id=s6BhdRkqt3
-  &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
-  &scope=profile
-  &deferrable=true
-  &state=af0ifjsldkj HTTP/1.1
-Host: server.example.com
-~~~
-
-Request to the authorization challenge endpoint:
-
-~~~
-POST /authorize-challenge HTTP/1.1
-Host: server.example.com
-Content-Type: application/x-www-form-urlencoded
-Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
-
-login_hint=%2B1-310-123-4567
-&scope=profile
-&deferrable=true
-~~~
-
-Request to the token endpoint:
+Token endpoint request opting in to DTR (Authorization Code Grant):
 
 ~~~
 POST /token HTTP/1.1
@@ -366,40 +367,25 @@ grant_type=authorization_code
 &deferrable=true
 ~~~
 
+Token endpoint request opting in to DTR (Client Credentials Grant):
 
-# The Deferred Authorization Grant
+~~~
+POST /token HTTP/1.1
+Host: server.example.com
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
-This section defines the protocol elements that comprise the deferred
-authorization grant: how the originating grant's authorization
-endpoint behaves under DTR, the token endpoint request that may yield a
-deferred response, the polling request that retrieves the eventual
-token response, and the error responses returned during these
-exchanges.
+grant_type=client_credentials
+&scope=profile
+&deferrable=true
+~~~
 
-This specification defines one new `grant_type` URN,
-`urn:ietf:params:oauth:grant-type:deferred`, used only on polling
-requests ({{token-endpoint-polling}}) to retrieve a deferred token
-response. The originating grant's existing `grant_type` (for example,
-`authorization_code` or `client_credentials`) is unchanged on the
-initial request that may yield a deferred response. This specification
-does not define a new `response_type`. Deferral is signaled by the
-`deferrable` parameter from {{client-opt-in-signaling}} on the
-originating grant's requests, and on return, by the deferred response
-defined in {{token-endpoint-deferred-response}}.
+The following requests illustrate the optional pre-token hint
+({{pre-token-hints}}) on grants with a preceding endpoint. A client
+that sends a hint is expected to follow up with `deferrable=true` on
+the corresponding token request shown above.
 
-## Authorization Request
-
-For grants that have an authorization-endpoint step, the authorization
-request is the originating grant's authorization request with the
-`deferrable` parameter from {{client-opt-in-signaling}} added. The
-authorization endpoint behaves identically with or without
-`deferrable`; deferral is decided only at the token endpoint. The
-authorization server returns the originating grant's normal
-authorization response and does not include any DTR-specific
-parameter.
-
-The following is a non-normative example of an authorization request
-under DTR (line wraps within values are for display only):
+Authorization endpoint hint (Authorization Code Grant of {{OAUTH-2.1}}):
 
 ~~~
 GET /authorize?response_type=code
@@ -411,7 +397,72 @@ GET /authorize?response_type=code
 Host: server.example.com
 ~~~
 
-### Authorization Request Validation
+Device authorization endpoint hint (Device Authorization Grant of
+{{RFC8628}}):
+
+~~~
+POST /device_authorization HTTP/1.1
+Host: server.example.com
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
+
+scope=profile
+&deferrable=true
+~~~
+
+Authorization challenge endpoint hint ({{FIPA}}):
+
+~~~
+POST /authorize-challenge HTTP/1.1
+Host: server.example.com
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
+
+login_hint=%2B1-310-123-4567
+&scope=profile
+&deferrable=true
+~~~
+
+
+# The Deferred Authorization Grant
+
+This section defines the protocol elements that comprise the deferred
+authorization grant: how the originating grant's endpoint behaves
+under DTR, the token endpoint request that may yield a
+deferred response, the polling request that retrieves the eventual
+token response, and the error responses returned during these
+exchanges.
+
+This specification defines one new `grant_type` URN,
+`urn:ietf:params:oauth:grant-type:deferred`, used only on polling
+requests ({{token-endpoint-polling}}) to retrieve a deferred token
+response. The originating grant's existing `grant_type` (for example,
+`authorization_code` or `client_credentials`) is unchanged on the
+token endpoint request that may yield a deferred response.
+
+## Pre-Token Request
+
+For grants that have a preceding endpoint, the client MAY send
+`deferrable=true` on the originating grant's request to that endpoint
+as the optional pre-token hint defined in {{pre-token-hints}}. The
+preceding endpoint behaves identically with or without `deferrable`:
+the authorization server returns the originating grant's normal
+response and does not include any DTR-specific parameter.
+
+The following is a non-normative example of an authorization-endpoint
+hint under DTR (line wraps within values are for display only):
+
+~~~
+GET /authorize?response_type=code
+  &client_id=s6BhdRkqt3
+  &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
+  &scope=profile
+  &deferrable=true
+  &state=af0ifjsldkj HTTP/1.1
+Host: server.example.com
+~~~
+
+### Pre-Token Request Validation
 
 The authorization server MUST validate the request as it would without
 DTR, with the following addition:
@@ -420,30 +471,26 @@ DTR, with the following addition:
   the literal `"true"` or the literal `"false"`. If the value is
   anything else, the authorization server MUST reject the request with
   the error `invalid_request`. If the parameter is absent, the
-  authorization server processes the request as if `deferrable=false`
-  were supplied.
+  authorization server processes the request as it would without DTR.
 
-If the authorization server encounters any error, it MUST return an
-authorization error response per the originating grant's rules.
+If the authorization server encounters any error, it MUST return the
+originating grant's normal error response.
 
-## Authorization Response
+## Pre-Token Response
 
 The authorization server returns the originating grant's normal
-authorization response, regardless of whether the request will
-eventually be deferred at the token endpoint.
+response to a preceding-endpoint request, regardless of whether the
+request carried a `deferrable=true` hint.
 For the Authorization Code Grant of {{OAUTH-2.1}}, this is the
 authorization code response of {{Section 4.1.2 of OAUTH-2.1}}.
 
-The client processes the authorization response per the originating
-grant's rules.
+The client processes the response per the originating grant's rules.
 
 ## Token Endpoint — Initial Request {#token-endpoint-initial-request}
 
-The initial token request is the originating grant's token request with
-the `deferrable` parameter from {{client-opt-in-signaling}} added.
-The value of `deferrable` MUST equal the value sent on any earlier
-request in the same flow, per
-{{strict-equality-of-deferrable-across-requests}}.
+The initial token request is the originating grant's token request,
+extended with the `deferrable` parameter from
+{{client-opt-in-signaling}}.
 
 The client MAY also include the following parameter:
 
@@ -490,13 +537,17 @@ grant_type=authorization_code
 The authorization server MUST validate the request as it would without
 DTR, with the following additions:
 
-- If the `deferrable` parameter is present, verify that its value is
-  the literal `"true"` or the literal `"false"`. If the parameter is
-  absent, treat the request as if `deferrable=false` were supplied.
-- Verify that the effective value of `deferrable` (the supplied value,
-  or `false` if absent) matches the value supplied on any earlier
-  request of the same originating grant. If the values do not match,
-  the authorization server MUST reject the request with the error
+- Apply the `deferrable` validation rules of
+  {{the-deferrable-parameter}}: if present, the value MUST be the
+  literal `"true"` or `"false"`; if absent, treat as if
+  `deferrable=false` were supplied.
+- If the originating grant has a preceding endpoint and the client
+  sent `deferrable=true` on that earlier request, apply the
+  hint-consistency rule of {{pre-token-hints}}: if the token request
+  does not also carry `deferrable=true` and the authorization server
+  has committed to deferral-aware behavior on the strength of the
+  hint such that it cannot complete the request synchronously, the
+  authorization server MUST reject the request with the error
   `invalid_request`.
 - If `client_notification_token` is present, verify that the value
   conforms to the entropy requirements above. If not, the
@@ -740,9 +791,11 @@ The following additional rules apply:
   treat both as terminal and MUST NOT retry with the same
   `deferral_token`.
 
-- A request whose `deferrable` value does not match the value supplied
-  on a prior request in the same flow MUST result in an
-  `invalid_request` error per {{strict-equality-of-deferrable-across-requests}}.
+- A token request that contradicts a `deferrable=true` hint sent on
+  the originating grant's preceding-endpoint request, where the
+  authorization server has already committed to deferral-aware
+  behavior on the strength of that hint, MUST result in an
+  `invalid_request` error per {{pre-token-hints}}.
 
 - If a client polls faster than `interval` repeatedly, the authorization
   server MAY escalate from `slow_down` to `invalid_request`. A client
