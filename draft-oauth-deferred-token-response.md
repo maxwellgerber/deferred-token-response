@@ -9,19 +9,19 @@ number:
 date:
 consensus: true
 v: 3
-area: Security
-workgroup: Web Authorization Protocol
+# area: Security
+# workgroup: Web Authorization Protocol
 keyword:
  - next generation
  - unicorn
  - sparkling distributed ledger
 venue:
-  group: Web Authorization Protocol
-  type: Working Group
-  mail: oauth@ietf.org
-  arch: https://mailarchive.ietf.org/arch/browse/oauth/
-  github: maxwellgerber/deferred-token-response
-  latest: https://maxwellgerber.github.io/deferred-token-response/draft-oauth-deferred-token-response.html
+#  group: Web Authorization Protocol
+#  type: Working Group
+#  mail: oauth@ietf.org
+#  arch: https://mailarchive.ietf.org/arch/browse/oauth/
+  github: "maxwellgerber/deferred-token-response"
+  latest: "https://maxwellgerber.github.io/deferred-token-response/draft-oauth-deferred-token-response.html"
 
 author:
  -
@@ -76,7 +76,7 @@ informative:
 --- abstract
 
 This document defines the Deferred Token Response (DTR) extension
-for OAuth 2.1. In existing OAuth grants, the token endpoint either 
+for OAuth 2.1. In existing OAuth grants, the token endpoint either
 issues an access token or returns an error.
 DTR introduces a third outcome: the authorization server returns a
 `deferral_token` and a polling interval, indicating that the final
@@ -94,13 +94,13 @@ Existing OAuth grants assume the authorization server can decide
 synchronously whether to issue an access token.
 The Authorization Code Grant (Section 4.1 of {{OAUTH-2.1}}), Client
 Credentials Grant (Section 4.2 of {{OAUTH-2.1}}), and assertion-based
-grants such as {{ID-JAG}} all respond to a token request with either 
+grants such as {{ID-JAG}} all respond to a token request with either
 a token response or an error response.
 
 However, some authorization decisions cannot complete synchronously:
 
 - ID Verification: Users may submit copies of physical credentials
-  during onboarding or step-up. Verification by the authorization server 
+  during onboarding or step-up. Verification by the authorization server
   (or a third party acting on its behalf) can take hours.
 
 - Fraud Prevention: Sensitive operations may trigger manual review by
@@ -113,7 +113,7 @@ However, some authorization decisions cannot complete synchronously:
 
 - Complex Authorization: Enterprise businesses often manage access
   controls using multi-party governance and administration workflows.
-  Access requests may need to be approved by parties other than the 
+  Access requests may need to be approved by parties other than the
   resource owner.
 
 In each case, the authorization server today must return an error
@@ -276,8 +276,8 @@ The client sends `deferrable` on every request of the originating
 grant up to and including the token endpoint request that may yield a
 deferred response.
 
-Polling requests ({{token-endpoint-polling}}) are not part of this scope: 
-they continue an already-deferred flow rather than initiating one, 
+Polling requests ({{token-endpoint-polling}}) are not part of this scope:
+they continue an already-deferred flow rather than initiating one,
 and do not carry the `deferrable` parameter.
 
 A client MAY discover authorization server support for this
@@ -286,7 +286,7 @@ authorization server metadata parameter ({{iana-considerations}}). A
 client MAY send `deferrable=true` to an authorization server
 that does not advertise support; such an authorization server
 should silently ignore the parameter and complete the request synchronously
-per its originating grant's rules. 
+per its originating grant's rules.
 
 ## Strict Equality of `deferrable` {#strict-equality-of-deferrable-across-requests}
 
@@ -605,8 +605,8 @@ was bound to a DPoP key (or to a TLS client certificate per
 requests presenting this deferral token MUST be authenticated with
 the same key (see {{token-endpoint-polling}}).
 
-Future profiles of this specification MAY add additional response 
-parameters alongside the parameters defined here. 
+Future profiles of this specification MAY add additional response
+parameters alongside the parameters defined here.
 Such parameters are out of scope for this document.
 
 ## Token Endpoint — Polling
@@ -650,7 +650,7 @@ grant_type=urn:ietf:params:oauth:grant-type:deferred
 
 ### Polling Request Validation
 
-The authorization server MUST validate the request: 
+The authorization server MUST validate the request:
 
 1. Authenticate the client per {{Section 2.4 of OAUTH-2.1}}.
 2. Verify that the `deferral_token` is recognized and was issued to
@@ -1359,7 +1359,7 @@ that is not guaranteed to complete instantly.
 
 The client sends an authorization request with `deferrable=true`. The
 authorization server determines that the requested operation
-requires step-up, collects the relevant information from the user, 
+requires step-up, collects the relevant information from the user,
 returns a deferred response, and proceeds with the
 verification asynchronously. The client renders any unblocked steps
 of the user's workflow (form fill, preview, draft persistence) while
