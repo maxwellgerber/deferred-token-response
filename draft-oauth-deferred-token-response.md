@@ -34,7 +34,7 @@ author:
     initials: G.
     surname: de Oliveira Niero
     fullname: Guilherme de Oliveira Niero
-    organization: Banco Itaú
+    organization: Independent
     email: iam@gniero.com
  -
     initials: M.
