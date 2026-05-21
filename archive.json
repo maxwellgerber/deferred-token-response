@@ -1,18 +1,8 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-05-19T02:15:01.180919+00:00",
+  "timestamp": "2026-05-21T02:13:33.531322+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
-    {
-      "name": "bug",
-      "description": "Something isn't working",
-      "color": "d73a4a"
-    },
-    {
-      "name": "documentation",
-      "description": "Improvements or additions to documentation",
-      "color": "0075ca"
-    },
     {
       "name": "duplicate",
       "description": "This issue or pull request already exists",
@@ -22,16 +12,6 @@
       "name": "enhancement",
       "description": "New feature or request",
       "color": "a2eeef"
-    },
-    {
-      "name": "good first issue",
-      "description": "Good for newcomers",
-      "color": "7057ff"
-    },
-    {
-      "name": "help wanted",
-      "description": "Extra attention is needed",
-      "color": "008672"
     },
     {
       "name": "invalid",
@@ -47,6 +27,21 @@
       "name": "wontfix",
       "description": "This will not be worked on",
       "color": "ffffff"
+    },
+    {
+      "name": "editorial",
+      "description": "",
+      "color": "da0c61"
+    },
+    {
+      "name": "ready for PR",
+      "description": "",
+      "color": "f2f405"
+    },
+    {
+      "name": "needs discussion",
+      "description": "",
+      "color": "76c64e"
     }
   ],
   "issues": [],
