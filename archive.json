@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-05-21T02:13:33.531322+00:00",
+  "timestamp": "2026-05-24T02:12:28.872307+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -44,6 +44,475 @@
       "color": "76c64e"
     }
   ],
-  "issues": [],
+  "issues": [
+    {
+      "number": 1,
+      "id": "I_kwDOSeoW_M8AAAABC9YdDw",
+      "title": "Response shape is indistinguishable from a successful token response",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/1",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "The deferred response defined in \u00a74.3 reuses OAuth 2.1's response shape:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L588-L648\n\nExisting clients might read `access_token` from a token response and forward it as `Authorization: Bearer` to downstream resource servers.\n\n### Options\n\nWe could consider moving the deferral token to a new top-level `deferral_token` field and imit `access_token` and `token_type` from the deferred response so naive clients fail closed.\n\nOr we could say that since this is opt in, it's not a big deal. But in any case, I thought this was worth flagging to track.",
+      "createdAt": "2026-05-21T09:55:25Z",
+      "updatedAt": "2026-05-21T09:55:25Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 2,
+      "id": "I_kwDOSeoW_M8AAAABC9bOtQ",
+      "title": "Originating-grant parameter set is not frozen at issuance",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/2",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "The polling request only includes the `deferral_token` and the polling grant type:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L669-L700\n\nAnd the polling validation steps don't re-enforce any of the originating grant's parameters like scope, `redirect_uri` or any OIDC params:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L702-L720\n\nTwo AS implementations can diverge on what is frozen vs. recomputed at resolution time. One could choose to e.g. snapshot `scope` at issuance, another re-evaluates current policy at the end and downscopes.\n\nI think we should state explicitly that the AS MUST snapshot the parameters that influence the eventual access token (scope, `redirect_uri`, any OIDC params, etc.) and MUST issue the eventual access token under that snapshot.\nBut it might be that your use cases are different, so I'm interested in discussing if it would be useful to be more lenient.",
+      "createdAt": "2026-05-21T10:02:14Z",
+      "updatedAt": "2026-05-21T10:02:14Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 3,
+      "id": "I_kwDOSeoW_M8AAAABC9s7yw",
+      "title": "Error responses across endpoints are not aligned",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/3",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "\u00a74.5 distinguishes \"already redeemed\" vs. \"unknown identifier\" in `error_description`:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L786-L793\n\n\u00a75.2 says that revocation \"MUST cause subsequent polling requests against the deferral token to return `access_denied`\" and that the AS returns `invalid_client` for cross-client revocation:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L949-L998\n\nThis is an \"exists for some other client\" oracle observable by an authenticated attacker.\n\nI think there might be some potential attacks here that we should consider. We already refer to RFC 7009 about indistinguishability, but I don't think the design here actually provides indistinguishability.",
+      "createdAt": "2026-05-21T10:47:30Z",
+      "updatedAt": "2026-05-21T10:47:30Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 4,
+      "id": "I_kwDOSeoW_M8AAAABC9vRlQ",
+      "title": "Missing guidance about OpenID Connect interaction",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/4",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "For OIDC originating grants, ID Token claims can be captured at the originating authorize moment but the token is issued much later. This could cause trouble e.g. with `max_age` and `auth_time` in particular.\n\nWe should consider adding an \"Interaction with OpenID Connect\" appendix and consider whether we should:\n1. State that ID Token claims reflect the originating authorization moment,\n2. State that ID Token claims reflect the actual user authentication moment, or\n3. Allow both options",
+      "createdAt": "2026-05-21T10:53:27Z",
+      "updatedAt": "2026-05-21T10:53:27Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 5,
+      "id": "I_kwDOSeoW_M8AAAABC9wybQ",
+      "title": "Discovery / opt-in in metadata",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/5",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "The current discovery text suggests a non-supporting AS will silently ignore `deferrable=true`, but provides no normative MUST that a DTR-supporting AS publishes `deferred_token_response_supported=true` itself:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L287-L294\n\nI think we should say the AS MUST publish this.\n\nThe metadata also doesn't say which originating grants DTR is offered for, which we might want to consider doing.",
+      "createdAt": "2026-05-21T10:57:01Z",
+      "updatedAt": "2026-05-21T10:57:01Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 6,
+      "id": "I_kwDOSeoW_M8AAAABC9xxCw",
+      "title": "Mention that communication with any third-party approver/authenticator is out of scope",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/6",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "AS could use some other provider/service/integration to actually do the authentication.\nWe should briefly mention the trust relationship there, but otherwise say anything about their protocol is out of scope.",
+      "createdAt": "2026-05-21T10:59:27Z",
+      "updatedAt": "2026-05-21T10:59:27Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 7,
+      "id": "I_kwDOSeoW_M8AAAABDEuraw",
+      "title": "Retention guidance on \"associated state\" might be too weak",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/7",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "\u00a711.2 says the AS SHOULD dispose of `deferral_token` values \"and their associated state\" once the request has resolved or expired, but never defines what \"associated state\" is:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1283-L1293\n\nI think we should at least mention the pieces of state that we mention elsewhere in the draft:\n- the `client_notification_token`\n- any snapshotted originating-grant parameters (see #2)\n- any captured evidence",
+      "createdAt": "2026-05-22T08:45:12Z",
+      "updatedAt": "2026-05-22T08:45:12Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 8,
+      "id": "I_kwDOSeoW_M8AAAABDEwL9w",
+      "title": "Consider comparing with more specs",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/8",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "The Relationship section contrasts only CIBA:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1057-L1085\n\nDevice Authorization Grant is contrasted inline in the beginning, but would make sense to do more in this section:\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L133-L142\n\nMight also make sense to compare to regular Token Exchange and First Party Apps.",
+      "createdAt": "2026-05-22T08:49:10Z",
+      "updatedAt": "2026-05-22T08:49:10Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 9,
+      "id": "I_kwDOSeoW_M8AAAABDEw1aQ",
+      "title": "Explicitly mention  how to use `deferrable` with PAR and JAR",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/9",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "The opt-in text says the client signals opt-in to DTR by including `deferrable=true` on the originating grant's token endpoint request.\nI think we should add a one-paragraph subsection stating `deferrable` is conveyed wherever the originating grant's request parameters are conveyed (i.e. also inside the JAR request object or inside the PAR request body).\n\nThis might also require us to update the IANA usage location entry, but I don't really know to be honest.",
+      "createdAt": "2026-05-22T08:50:54Z",
+      "updatedAt": "2026-05-22T08:50:54Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 10,
+      "id": "I_kwDOSeoW_M8AAAABDEyASQ",
+      "title": "Decide whether refresh token grants are included or not",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/10",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "The \"originating grant\" definition lists Authorization Code, Client Credentials, and Token Exchange:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L172-L179\n\nBut we do allow any originating grant as it is now. Refresh tokens have quite different semantics, so I think we should mention them specifically.\nIn particular, we need to think about how cancellation of a deferred flow affects the refresh token and whether a deferred response consumes the refresh token (probably not).",
+      "createdAt": "2026-05-22T08:53:55Z",
+      "updatedAt": "2026-05-22T08:53:55Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 11,
+      "id": "I_kwDOSeoW_M8AAAABDEzzxw",
+      "title": "Enforce issues_token_type to match original grant",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/11",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "We say that the successful polling response includes a `token_type`:\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L722-L729\n\nI think we should clarify that the `token_type` MUST match the originating one. E.g. for token exchange, this is important.\nI suggest adding a line like:\n>\"When the originating grant defines `issued_token_type` in its successful token response, the successful polling response carries that originating-grant `issued_token_type` value\".",
+      "createdAt": "2026-05-22T08:58:31Z",
+      "updatedAt": "2026-05-22T08:58:31Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 12,
+      "id": "I_kwDOSeoW_M8AAAABDE1djA",
+      "title": "Specify that refresh tokens must also inherit DPoP binding",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/12",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "\u00a79.1 says the access token issued inherits DPoP binding to the same key:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1120-L1125\n\nThe \u00a74.4.2 example response includes a `refresh_token`:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L740-L753\n\nRFC 9449 also normatively requires refresh-token binding for public clients.\n\nWe should add text along the lines of:\n> For a public client (or any client that bound the deferral token with DPoP), the refresh token issued MUST be sender-constrained to the same key per RFC 9449.",
+      "createdAt": "2026-05-22T09:02:34Z",
+      "updatedAt": "2026-05-22T09:02:34Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 13,
+      "id": "I_kwDOSeoW_M8AAAABDFABnw",
+      "title": "Polling-traffic side channels",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/13",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "Polling patterns are visible to network intermediaries.\n\u00a711.1 mentions traffic observability in passing but provides very little guidance:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1270-L1280\n\nI suggest adding:\n- Clients SHOULD add upward-only jitter to their polling cadence to reduce fingerprintability.\n- For AS-chosen `interval` values, be careful not to have different polling patterns for different flows/categories/etc. if that is sensitive.",
+      "createdAt": "2026-05-22T09:30:42Z",
+      "updatedAt": "2026-05-22T09:30:42Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 14,
+      "id": "I_kwDOSeoW_M8AAAABDFA2YA",
+      "title": "`error_description` progress string side channel",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/14",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "\u00a77 forbids PII in progress strings but the example value encodes the review category, which is then visible to anyone reading polling responses or downstream logs:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1036-L1054\n\nWe should add a privacy consideration that even the step name here might be sensitive depending on the process.\nI think we should also change the example to be more opaque (e.g. just \"in_review).",
+      "createdAt": "2026-05-22T09:32:40Z",
+      "updatedAt": "2026-05-22T09:32:40Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 15,
+      "id": "I_kwDOSeoW_M8AAAABDFBTUQ",
+      "title": "Interaction with introspection endpoint",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/15",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "RFC 7662 only talks about access tokens. We should consider what an introspection endpoint should return for a deferral token (if anything).\nProbably the AS SHOULD return `active=false` if a deferral token is submitted.",
+      "createdAt": "2026-05-22T09:33:54Z",
+      "updatedAt": "2026-05-22T09:33:54Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 16,
+      "id": "I_kwDOSeoW_M8AAAABDFB_xw",
+      "title": "Cancellation discovery before using",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/16",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "A client could call the revoke endpoint against a non-aware AS. The client would then think the cancellation succeeded even though it didn't.\nI think we should add guidance:\n> Clients SHOULD check `revocation_endpoint_token_type_values_supported` before relying on cancellation.",
+      "createdAt": "2026-05-22T09:35:47Z",
+      "updatedAt": "2026-05-22T09:35:47Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 17,
+      "id": "I_kwDOSeoW_M8AAAABDFCvLA",
+      "title": "Potential polling loop with caching",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/17",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "Polling success carries `no-store`, but polling-error responses don't require it.\nIf a polling-error response with `authorization_pending` is cached, the client might keep polling forever.\nWe should require `no-store` on polling-error responses.",
+      "createdAt": "2026-05-22T09:37:41Z",
+      "updatedAt": "2026-05-22T09:37:41Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 18,
+      "id": "I_kwDOSeoW_M8AAAABDFDzZw",
+      "title": "Normative references are tagged as informative",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/18",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "The references block lists RFC 6750, RFC 8628, and RFC 8705 under `informative`:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L46-L73\n\nBut RFC 6750 grounds a MUST for the callback Bearer header:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L862-L867\n\nAnd RFC 8628 grounds MUSTs for error code semantics:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L763-L765\n\nRFC 8705 grounds a MUST option in \u00a79.1.\n\nWe should promote RFC 6750, RFC 8628, and RFC 8705 to normative references.",
+      "createdAt": "2026-05-22T09:40:07Z",
+      "updatedAt": "2026-05-22T09:40:07Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 19,
+      "id": "I_kwDOSeoW_M8AAAABDFESIw",
+      "title": "Lowercase \"should\"",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/19",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "A lowercase \"should\":\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L288-L294\n\nThe sentence describes behavior of a non-implementing AS, which this spec cannot bind normatively anyway. We should avoid using \"should\" and just say something like \"will\".",
+      "createdAt": "2026-05-22T09:41:11Z",
+      "updatedAt": "2026-05-22T09:41:11Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 20,
+      "id": "I_kwDOSeoW_M8AAAABDFF-Lg",
+      "title": "SHOULDs without motivation",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/20",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "The `authorization_pending` SHOULD continue polling without any explanation for when it might choose not to:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L767-L769\n\nClients SHOULD bind the deferral token with DPoP. We state the threat (long lifetimes) but not why it's allowed not to do it:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1109\n\n`slow_down` SHOULD (I think this can be a MUST):\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1147-L1150\n\nSHOULD re-resolve (to avoid SSRF?):\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1197-L1201\n\nClients SHOULD avoid embedding distinguishing information (also this is in a potentially non-normative section):\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1279-L1280\n\nSHOULD retain only necessary and dispose at resolution (also this is in a potentially non-normative section):\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1287-L1290",
+      "createdAt": "2026-05-22T09:45:25Z",
+      "updatedAt": "2026-05-22T09:45:25Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 21,
+      "id": "I_kwDOSeoW_M8AAAABDFIYWQ",
+      "title": "Pre-token hints confusing",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/21",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "This is pretty confusing and tries to cover three things at once:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L316-L323\n\nAs I see it, there are three options:\n- AS didn't commit\n- AS committed but can still satisfy synchronously\n- AS committed and cannot satisfy synchronously\n\nI think we should split this into more explicit text to avoid confusion about who should do what. Maybe we should list the cases more explicitly.",
+      "createdAt": "2026-05-22T09:51:59Z",
+      "updatedAt": "2026-05-22T09:51:59Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 22,
+      "id": "I_kwDOSeoW_M8AAAABDFSyZw",
+      "title": "Duplicate validation logic for `deferrable`",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/22",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "The validation logic for `deferrable` is stated in the parameter definition:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L267-L275\n\nAnd then again in Pre-Token Request Validation:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L466-L477\n\nMy feeling is that people don't really like normative language in definitions, so I think we should deduplicate so it's just in the validation logic.",
+      "createdAt": "2026-05-22T10:20:29Z",
+      "updatedAt": "2026-05-22T10:20:29Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 23,
+      "id": "I_kwDOSeoW_M8AAAABDFTWww",
+      "title": "Duplicate \"increase polling interval\" rules",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/23",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "The \"increase polling interval by at least 5 seconds\" rule appears in the polling-interval text:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L685-L688\n\nAnd again in the `slow_down` error definition:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L771-L773\n\nI think we should deduplicate by removing the normative language in the definition.",
+      "createdAt": "2026-05-22T10:22:03Z",
+      "updatedAt": "2026-05-22T10:22:03Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 24,
+      "id": "I_kwDOSeoW_M8AAAABDFUVfg",
+      "title": "Callback HTTP 204 SHOULD",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/24",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "needs discussion"
+      ],
+      "body": "The current SHOULD-204 + MUST-accept-200 wording for callbacks is a bit weird:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L889-L891\n\nI think we should pick one of these options instead:\n1. Change to say that client MUST respond with 204.\n2. Add text to say that client MUST respond with one of 200 or 204 (I.e. SHOULD 204, but the only other valid option is 200).",
+      "createdAt": "2026-05-22T10:24:44Z",
+      "updatedAt": "2026-05-22T10:24:44Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 25,
+      "id": "I_kwDOSeoW_M8AAAABDFVZFw",
+      "title": "Unclear DPoP phrasing",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/25",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "We write: \"MUST present a DPoP proof on the initial token request that yields a deferred response\":\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1101-L1109\n\nThis is kind of weird since the AS is the one that chooses whether this will happen or not.\nI think it would be clearer to write:\n> \"A public client MUST present a DPoP proof on any initial token request with `deferrable=true`, since sending that parameter allows the authorization server to defer the request.\"",
+      "createdAt": "2026-05-22T10:27:43Z",
+      "updatedAt": "2026-05-22T10:27:43Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 26,
+      "id": "I_kwDOSeoW_M8AAAABDFWA5A",
+      "title": "Define \"Originating grant's preceding endpoint\"",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/26",
+      "state": "OPEN",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "We use the term \"originating grant's preceding endpoint\" at least 5 times in the text.\nI don't think this is a standard term, and it's not immediately clear to me that readers will understand what we mean.\nI think it would be good to define the term or come up with some other way to say it.",
+      "createdAt": "2026-05-22T10:29:34Z",
+      "updatedAt": "2026-05-22T10:29:34Z",
+      "closedAt": null,
+      "comments": []
+    }
+  ],
   "pulls": []
 }
