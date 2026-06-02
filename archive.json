@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-05-31T02:31:37.892959+00:00",
+  "timestamp": "2026-06-02T02:39:38.304089+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -59,7 +59,7 @@
       ],
       "body": "The deferred response defined in \u00a74.3 reuses OAuth 2.1's response shape:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L588-L648\n\nExisting clients might read `access_token` from a token response and forward it as `Authorization: Bearer` to downstream resource servers.\n\n### Options\n\nWe could consider moving the deferral token to a new top-level `deferral_token` field and imit `access_token` and `token_type` from the deferred response so naive clients fail closed.\n\nOr we could say that since this is opt in, it's not a big deal. But in any case, I thought this was worth flagging to track.",
       "createdAt": "2026-05-21T09:55:25Z",
-      "updatedAt": "2026-05-26T20:54:27Z",
+      "updatedAt": "2026-06-01T12:34:50Z",
       "closedAt": null,
       "comments": [
         {
@@ -68,6 +68,13 @@
           "body": "[Token Exchange](https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response) had the same problem and decided explicitly to reuse the `access_token` field instead of omitting it:\n> The access_token parameter from [Section 5.1](https://www.rfc-editor.org/rfc/rfc6749#section-5.1) of [[RFC6749](https://datatracker.ietf.org/doc/html/rfc6749)] is used here to carry the requested token, which allows this token exchange protocol to use the existing OAuth 2.0 request and response constructs defined for the token endpoint. The identifier access_token is used for historical reasons and the issued token need not be an OAuth access token.\n\n> Or we could say that since this is opt in, it's not a big deal.\n\nThis is where I'm at - a client that opts in and then improperly handles the response is a broken client",
           "createdAt": "2026-05-26T20:54:26Z",
           "updatedAt": "2026-05-26T20:54:26Z"
+        },
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Failures might be tricky to track in some scenarios when using the token type - e.g. a client opts in to deferral (as an upgrade to  an implementation that already uses code flow), but its undelrlying abstraction (common on enterprise scenarios) injects an outdated library. \n\nSince authorization tokens should not be logged, it could take some time to track what is happening in the client side.\n\nAside from that, I like the token_type approach because it shapes the endpoint for multi-purpose token issuance.",
+          "createdAt": "2026-06-01T12:34:50Z",
+          "updatedAt": "2026-06-01T12:34:50Z"
         }
       ]
     },
