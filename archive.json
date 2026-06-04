@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-02T02:39:38.304089+00:00",
+  "timestamp": "2026-06-04T02:42:41.337883+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -118,7 +118,7 @@
       ],
       "body": "\u00a74.5 distinguishes \"already redeemed\" vs. \"unknown identifier\" in `error_description`:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L786-L793\n\n\u00a75.2 says that revocation \"MUST cause subsequent polling requests against the deferral token to return `access_denied`\" and that the AS returns `invalid_client` for cross-client revocation:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L949-L998\n\nThis is an \"exists for some other client\" oracle observable by an authenticated attacker.\n\nI think there might be some potential attacks here that we should consider. We already refer to RFC 7009 about indistinguishability, but I don't think the design here actually provides indistinguishability.",
       "createdAt": "2026-05-21T10:47:30Z",
-      "updatedAt": "2026-05-26T21:16:19Z",
+      "updatedAt": "2026-06-03T12:23:42Z",
       "closedAt": null,
       "comments": [
         {
@@ -134,6 +134,13 @@
           "body": "```\n - A `deferral_token` that is not recognized, was issued to a \n   different client, or has already been redeemed MUST result in an \n   `invalid_grant` error per {{Section 5.2 of OAUTH-2.1}}.\n```\n\nThis link is wrong - should be [3.2.4](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1#section-3.2.4)",
           "createdAt": "2026-05-26T21:16:19Z",
           "updatedAt": "2026-05-26T21:16:19Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> So we should say\n> ```\n>  2. If the deferral token is recognized but was issued to a different \n>     authenticated client, the authorization server MUST return \n>     HTTP 200 OK without modifying state, per {{Section 2.2 of RFC7009}}.\n> ```\n> instead.\n\nI think this solves at least the main issue I was concerned about. But we should probably double check that there aren't any other attacks here.",
+          "createdAt": "2026-06-03T12:23:42Z",
+          "updatedAt": "2026-06-03T12:23:42Z"
         }
       ]
     },
@@ -151,7 +158,7 @@
       ],
       "body": "For OIDC originating grants, ID Token claims can be captured at the originating authorize moment but the token is issued much later. This could cause trouble e.g. with `max_age` and `auth_time` in particular.\n\nWe should consider adding an \"Interaction with OpenID Connect\" appendix and consider whether we should:\n1. State that ID Token claims reflect the originating authorization moment,\n2. State that ID Token claims reflect the actual user authentication moment, or\n3. Allow both options",
       "createdAt": "2026-05-21T10:53:27Z",
-      "updatedAt": "2026-05-26T21:22:28Z",
+      "updatedAt": "2026-06-03T12:18:31Z",
       "closedAt": null,
       "comments": [
         {
@@ -160,6 +167,13 @@
           "body": "This makes sense to me. I believe that `auth_time` should reflect the originating authorization moment. Since clients are opting in to the behavior of DTR, they should be equipped to handle the code changes necessary to deal with an older `auth_time` than typically expected.",
           "createdAt": "2026-05-26T21:22:27Z",
           "updatedAt": "2026-05-26T21:22:27Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I agree. The `originating authorization moment` could be a bit undefined in some cases, but maybe that's fine. E.g. in the case where there is an out-of-band interaction with the user while the flow is deferred, should the `auth_time` be the time of the original request/response or the time of the out-of-band interaction? I think the answer depends on the use case, but I think writing down some guidance makes sense.",
+          "createdAt": "2026-06-03T12:18:31Z",
+          "updatedAt": "2026-06-03T12:18:31Z"
         }
       ]
     },
@@ -177,7 +191,7 @@
       ],
       "body": "The current discovery text suggests a non-supporting AS will silently ignore `deferrable=true`, but provides no normative MUST that a DTR-supporting AS publishes `deferred_token_response_supported=true` itself:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L287-L294\n\nI think we should say the AS MUST publish this.\n\nThe metadata also doesn't say which originating grants DTR is offered for, which we might want to consider doing.",
       "createdAt": "2026-05-21T10:57:01Z",
-      "updatedAt": "2026-05-26T21:27:24Z",
+      "updatedAt": "2026-06-03T12:14:04Z",
       "closedAt": null,
       "comments": [
         {
@@ -186,6 +200,13 @@
           "body": "> I think we should say the AS MUST publish this.\n\nAgreed, we should borrow the language used from [CIMD \u00a75](https://www.ietf.org/archive/id/draft-ietf-oauth-client-id-metadata-document-01.html#name-authorization-server-metada):\n\n```\n   Authorization servers that publish Authorization Server Metadata\n   [RFC8414] MUST include the following property to signal support for\n   client metadata documents as described in this specification.\n```\n\n> The metadata also doesn't say which originating grants DTR is offered for, which we might want to consider doing.\n\nThis one I am not so sure on - what would a client do with that information? How could its behavior meaningfully change? What if an AS impl changes over time and something that didn't support DTR now does?",
           "createdAt": "2026-05-26T21:27:24Z",
           "updatedAt": "2026-05-26T21:27:24Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> This one I am not so sure on - what would a client do with that information? How could its behavior meaningfully change?\n\nI think you're right that it couldn't really do much at this level. I can think of use cases where it would only be supported e.g. for some `acr_values`, but I don't think that's easy to negotiate in-band. That should probably be solved by providing client-specific metadata or something instead.\n\n> What if an AS impl changes over time and something that didn't support DTR now does?\n\nIn that case they should \"just\" change their metadata, right? Or am I overlooking something?",
+          "createdAt": "2026-06-03T12:14:04Z",
+          "updatedAt": "2026-06-03T12:14:04Z"
         }
       ]
     },
@@ -257,7 +278,7 @@
       ],
       "body": "The opt-in text says the client signals opt-in to DTR by including `deferrable=true` on the originating grant's token endpoint request.\nI think we should add a one-paragraph subsection stating `deferrable` is conveyed wherever the originating grant's request parameters are conveyed (i.e. also inside the JAR request object or inside the PAR request body).\n\nThis might also require us to update the IANA usage location entry, but I don't really know to be honest.",
       "createdAt": "2026-05-22T08:50:54Z",
-      "updatedAt": "2026-05-26T21:35:56Z",
+      "updatedAt": "2026-06-03T12:06:32Z",
       "closedAt": null,
       "comments": [
         {
@@ -266,6 +287,13 @@
           "body": "I like the language used in [9396 \u00a73 ](https://datatracker.ietf.org/doc/html/rfc9396#section-3)[Authorization Request](https://datatracker.ietf.org/doc/html/rfc9396#name-authorization-request) - which ties the `authorization_details` parameter to existing usage of the `scope` parameter, and avoids needing to mention PAR and JAR as explicit vehicles. \n\n```\nThe authorization_details authorization request parameter can be used to specify authorization requirements in all places where the scope parameter is used for the same purpose, examples include:\n\nauthorization requests as specified in [[RFC6749](https://datatracker.ietf.org/doc/html/rfc6749)]\ndevice authorization requests as specified in [[RFC8628](https://datatracker.ietf.org/doc/html/rfc8628)]\nbackchannel authentication requests as defined in [[OID-CIBA](https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html)]\n```\n\nPerhaps using related wording will make it easier to express opt-in semantics across different grant types as well?",
           "createdAt": "2026-05-26T21:35:56Z",
           "updatedAt": "2026-05-26T21:35:56Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Yeah I think it makes sense to try to rewrite with this in mind. That could also solve #26.",
+          "createdAt": "2026-06-03T12:06:32Z",
+          "updatedAt": "2026-06-03T12:06:32Z"
         }
       ]
     },
@@ -283,7 +311,7 @@
       ],
       "body": "The \"originating grant\" definition lists Authorization Code, Client Credentials, and Token Exchange:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L172-L179\n\nBut we do allow any originating grant as it is now. Refresh tokens have quite different semantics, so I think we should mention them specifically.\nIn particular, we need to think about how cancellation of a deferred flow affects the refresh token and whether a deferred response consumes the refresh token (probably not).",
       "createdAt": "2026-05-22T08:53:55Z",
-      "updatedAt": "2026-05-26T21:40:39Z",
+      "updatedAt": "2026-06-03T11:58:17Z",
       "closedAt": null,
       "comments": [
         {
@@ -292,6 +320,13 @@
           "body": "> whether a deferred response consumes the refresh token (probably not)\n\nFor rotating refresh token implementations, I think a DTR _has_ to manipulate the refresh token in some way. Otherwise a single refresh token could be used to start multiple DTR polling flows, and we need some way to express whether each of those can result in the issuance of a new refresh token. ",
           "createdAt": "2026-05-26T21:40:39Z",
           "updatedAt": "2026-05-26T21:40:39Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Good point. My mind immediately jumped to binding the refresh token to the polling flow, but I think the state management of that would be horrible. I think we need to discuss this in more detail and think through the interactions.",
+          "createdAt": "2026-06-03T11:58:16Z",
+          "updatedAt": "2026-06-03T11:58:16Z"
         }
       ]
     },
@@ -381,7 +416,7 @@
       ],
       "body": "RFC 7662 only talks about access tokens. We should consider what an introspection endpoint should return for a deferral token (if anything).\nProbably the AS SHOULD return `active=false` if a deferral token is submitted.",
       "createdAt": "2026-05-22T09:33:54Z",
-      "updatedAt": "2026-05-26T21:42:57Z",
+      "updatedAt": "2026-06-03T11:56:17Z",
       "closedAt": null,
       "comments": [
         {
@@ -390,6 +425,13 @@
           "body": "I don't think we need to make these tokens introspectable - all information an AS can convey about the token would already be returned through polling",
           "createdAt": "2026-05-26T21:42:57Z",
           "updatedAt": "2026-05-26T21:42:57Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I agree. I think we should call out the why explicitly though. Maybe just in considerations.",
+          "createdAt": "2026-06-03T11:56:17Z",
+          "updatedAt": "2026-06-03T11:56:17Z"
         }
       ]
     },
@@ -551,7 +593,7 @@
       ],
       "body": "The current SHOULD-204 + MUST-accept-200 wording for callbacks is a bit weird:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L889-L891\n\nI think we should pick one of these options instead:\n1. Change to say that client MUST respond with 204.\n2. Add text to say that client MUST respond with one of 200 or 204 (I.e. SHOULD 204, but the only other valid option is 200).",
       "createdAt": "2026-05-22T10:24:44Z",
-      "updatedAt": "2026-05-26T21:46:36Z",
+      "updatedAt": "2026-06-03T11:55:33Z",
       "closedAt": null,
       "comments": [
         {
@@ -560,6 +602,13 @@
           "body": "This language comes from CIBA - \n```\nFor valid requests, the Client Notification Endpoint SHOULD respond with an HTTP 204 No Content. The OP SHOULD also accept responses with HTTP 200 OK and any body in the response SHOULD be ignored.\n```\n\nI'm not sure why CIBA did it that way, but I'd be happy to simplify and require 204 across the board.",
           "createdAt": "2026-05-26T21:46:36Z",
           "updatedAt": "2026-05-26T21:46:36Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Yeah I'm also not sure why CIBA did it like that. I guess they were afraid of hitting some weird legacy environment where they can only return 200's? I think we should remove this unless proven necessary.",
+          "createdAt": "2026-06-03T11:55:33Z",
+          "updatedAt": "2026-06-03T11:55:33Z"
         }
       ]
     },
@@ -595,7 +644,7 @@
       ],
       "body": "We use the term \"originating grant's preceding endpoint\" at least 5 times in the text.\nI don't think this is a standard term, and it's not immediately clear to me that readers will understand what we mean.\nI think it would be good to define the term or come up with some other way to say it.",
       "createdAt": "2026-05-22T10:29:34Z",
-      "updatedAt": "2026-05-26T21:51:50Z",
+      "updatedAt": "2026-06-03T11:53:06Z",
       "closedAt": null,
       "comments": [
         {
@@ -604,6 +653,13 @@
           "body": "Yes, I think that the opt-in mechanism for grants with multiple endpoints is the weakest / most confusing part of the draft right now. WDYT about reusing the language from RAR instead - https://datatracker.ietf.org/doc/html/rfc9396#name-authorization-request ?\n\nSomething to the effect of:\n```\nThe deferrable authorization request parameter can be used to specify client compatibility in all places where the scope parameter is used, examples include:\n\n* authorization requests as specified in RFC6749\n* device authorization requests as specified in RFC8628\n\nParameter encoding is determined by the respective context. In the context of an authorization request according to RFC6749, the parameter is encoded using the application/x-www-form-urlencoded format of the serialized JSON as shown in ...\n```",
           "createdAt": "2026-05-26T21:51:50Z",
           "updatedAt": "2026-05-26T21:51:50Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Seems like a good approach to me, and I think it helps that other specs have done the same. But we still need to figure out how to refer to the right thing in each instance where we use the term.",
+          "createdAt": "2026-06-03T11:53:06Z",
+          "updatedAt": "2026-06-03T11:53:06Z"
         }
       ]
     }
