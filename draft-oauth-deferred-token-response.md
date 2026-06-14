@@ -52,13 +52,13 @@ normative:
   RFC8693:
   RFC9449:
   RFC9700:
+  RFC6750:
+  RFC8628:
+  RFC8705:
   OAUTH-2.1: I-D.draft-ietf-oauth-v2-1
 
 informative:
   RFC6749:
-  RFC6750:
-  RFC8628:
-  RFC8705:
   ID-JAG: I-D.draft-ietf-oauth-identity-assertion-authz-grant
   FIPA: I-D.draft-ietf-oauth-first-party-apps
   CIBA:
@@ -652,7 +652,7 @@ The authorization server MUST sender-constrain the deferral token
 following the rules of {{RFC9449, Section 5}} for refresh tokens:
 when the initial token request that produced the deferred response
 was bound to a DPoP key (or to a TLS client certificate per
-{{?RFC8705}}), the deferral token is bound to the same key. Polling
+{{RFC8705}}), the deferral token is bound to the same key. Polling
 requests presenting this deferral token MUST be authenticated with
 the same key (see {{token-endpoint-polling}}).
 
@@ -762,7 +762,7 @@ authorization server returns an error response per
 
 In addition to the error codes defined in {{Section 5.2 of OAUTH-2.1}},
 this specification uses the following error codes, with semantics
-aligned with the corresponding codes in {{Section 3.5 of ?RFC8628}}:
+aligned with the corresponding codes in {{Section 3.5 of RFC8628}}:
 
 `authorization_pending`
 : The deferred request has not yet resolved. The client SHOULD continue
@@ -1104,7 +1104,7 @@ DPoP (for example, a profile that adopts {{RFC9449}} as a
 requirement), MUST present a DPoP proof on the initial token request
 that yields a deferred response. A confidential client using a strong
 client authentication method — for example, mutual TLS per
-{{?RFC8705}} or `private_key_jwt` — MAY omit DPoP. A confidential
+{{RFC8705}} or `private_key_jwt` — MAY omit DPoP. A confidential
 client using a weaker client authentication method (`client_secret_basic`
 or `client_secret_post`) SHOULD bind the deferral token with DPoP.
 
