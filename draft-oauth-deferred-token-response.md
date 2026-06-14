@@ -290,7 +290,7 @@ specification through the `deferred_token_response_supported`
 authorization server metadata parameter ({{iana-considerations}}). A
 client MAY send `deferrable=true` to an authorization server
 that does not advertise support; such an authorization server
-should silently ignore the parameter and complete the request synchronously
+will typically silently ignore the parameter and complete the request synchronously
 per its originating grant's rules.
 
 ## Pre-Token Hints {#pre-token-hints}
