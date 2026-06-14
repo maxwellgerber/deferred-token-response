@@ -18,12 +18,14 @@ Abstract
 
    This document defines the Deferred Token Response (DTR) extension for
    OAuth 2.1.  In existing OAuth grants, the token endpoint either
-   issues an access token or returns an error.  DTR introduces a third
-   outcome: the authorization server returns a deferral_token and a
-   polling interval, indicating that the final token response will be
-   available at a later time.  The client retrieves the eventual
-   response by polling the token endpoint, or by receiving a callback
-   from the authorization server when one is configured.
+   issues an access token or returns an error.  DTR establishes a
+   generic asynchronous token request mechanism that any OAuth
+   originating endpoint may plug into.  In DTR-aware flows, the
+   authorization server returns a deferral_token and a polling interval,
+   indicating that the final token response will be available at a later
+   time.  The client retrieves the eventual response by polling the
+   token endpoint, or by receiving a callback from the authorization
+   server when one is configured.
 
 About This Document
 
@@ -100,7 +102,8 @@ Table of Contents
      7.4.  Discovery
    8.  Implementation Considerations
      8.1.  Polling and Callback Together
-     8.2.  Progress Information in Errors
+     8.2.  Obtaining an Immediate Result Alongside a Deferred Request
+     8.3.  Progress Information in Errors
    9.  Relationship to Other Specifications
      9.1.  Relationship to CIBA
    10. Security Considerations
@@ -656,7 +659,7 @@ Table of Contents
 
    error_description  OPTIONAL.  Human-readable text as defined in
       Section 5.2 of [OAUTH-2.1], subject to the data-minimization rules
-      of Section 8.2.
+      of Section 8.3.
 
    Example:
 
@@ -841,7 +844,7 @@ Table of Contents
       invalid_request.  A client receiving invalid_request MUST NOT make
       further requests with the same deferral_token.
 
-   The data-minimization rules of Section 8.2 apply to the
+   The data-minimization rules of Section 8.3 apply to the
    error_description field of any error response defined in this
    section, including authorization_pending responses that carry
    progress information.
@@ -1066,7 +1069,35 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
    warrant the durability of polling: a single lost push request would
    otherwise lose the outcome of the entire deferred request.
 
-8.2.  Progress Information in Errors
+8.2.  Obtaining an Immediate Result Alongside a Deferred Request
+
+   A deferred request may take an arbitrarily long time to resolve.  A
+   client that also requires an immediate result — for example, a basic
+   access token or an ID token to render initial user experience — can
+   obtain one by starting a separate, non-deferred grant in parallel,
+   while it continues to poll the deferred request for the final result.
+
+   How the client obtains the immediate result depends on the
+   originating grant:
+
+   *  For the Authorization Code Grant, the client can perform a
+      parallel OpenID Connect authentication with prompt=none to obtain
+      an ID token (and, where applicable, an access token) without
+      further user interaction.
+
+   *  For the Client Credentials Grant or [ID-JAG], the client can send
+      an additional token request that omits the completion_mode
+      parameter entirely, which the authorization server completes
+      synchronously per the originating grant's rules.
+
+   The immediate result and the deferred result are independent: the
+   immediate result reflects what the authorization server can issue
+   synchronously, while the deferred request continues toward the final,
+   possibly higher-assurance, token response.  This lets a client
+   proceed with available work immediately rather than blocking on the
+   deferred outcome.
+
+8.3.  Progress Information in Errors
 
    When responding to a polling request with authorization_pending, the
    authorization server SHOULD include progress information in the
