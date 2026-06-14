@@ -80,7 +80,9 @@ informative:
 This document defines the Deferred Token Response (DTR) extension
 for OAuth 2.1. In existing OAuth grants, the token endpoint either
 issues an access token or returns an error.
-DTR introduces a third outcome: the authorization server returns a
+DTR establishes a generic asynchronous token request mechanism that any
+OAuth originating endpoint may plug into.
+In DTR-aware flows, the authorization server returns a
 `deferral_token` and a polling interval, indicating that the final
 token response will be available at a later time.
 The client retrieves the eventual response by polling the token
@@ -1063,6 +1065,32 @@ This specification does not define a way to deliver the final token
 response directly via the callback. Long-running, high-value flows
 warrant the durability of polling: a single lost push request would
 otherwise lose the outcome of the entire deferred request.
+
+## Obtaining an Immediate Result Alongside a Deferred Request
+
+A deferred request may take an arbitrarily long time to resolve. A client
+that also requires an immediate result — for example, a basic access token
+or an ID token to render initial user experience — can obtain one by
+starting a separate, non-deferred grant in parallel, while it continues to
+poll the deferred request for the final result.
+
+How the client obtains the immediate result depends on the originating
+grant:
+
+- For the Authorization Code Grant, the client can perform a parallel
+  OpenID Connect authentication with `prompt=none` to obtain an ID token
+  (and, where applicable, an access token) without further user
+  interaction.
+- For the Client Credentials Grant or {{ID-JAG}}, the client can send an
+  additional token request that omits the `completion_mode` parameter
+  entirely, which the authorization server completes synchronously per the
+  originating grant's rules.
+
+The immediate result and the deferred result are independent: the immediate
+result reflects what the authorization server can issue synchronously, while
+the deferred request continues toward the final, possibly higher-assurance,
+token response. This lets a client proceed with available work immediately
+rather than blocking on the deferred outcome.
 
 ## Progress Information in Errors {#progress-information-in-errors}
 
