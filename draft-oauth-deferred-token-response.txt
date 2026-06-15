@@ -780,7 +780,8 @@ Table of Contents
       interval.
 
    slow_down  The client is polling faster than interval allows.  The
-      client MUST increase its polling interval by at least 5 seconds.
+      client MUST increase its polling interval as described in
+      Section 5.5.
 
    expired_token  The deferral_token has expired.  The client MUST stop
       polling with this deferral_token and MAY initiate a new flow.
