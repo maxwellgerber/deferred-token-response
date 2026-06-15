@@ -2477,6 +2477,14 @@ metadata parameter <code>revocation_endpoint_token_type_values_supported</code>
 in <a href="#iana-considerations" class="auto internal xref">Section 12</a>. An authorization server that supports this
 specification <span class="bcp14">MUST</span> list
 <code>urn:ietf:params:oauth:token-type:deferral-token</code> in this array.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<p id="section-7.4-2">Clients <span class="bcp14">SHOULD</span> check that
+<code>urn:ietf:params:oauth:token-type:deferral-token</code> is present in
+<code>revocation_endpoint_token_type_values_supported</code> before relying on
+cancellation. An authorization server that does not advertise support
+will return HTTP 200 OK for any revocation request per
+<span><a href="https://rfc-editor.org/rfc/rfc7009#section-2.2" class="relref">Section 2.2</a> of [<a href="#RFC7009" class="cite xref">RFC7009</a>]</span>, which is indistinguishable from a
+successful cancellation. Clients that skip this check risk silently
+failing to cancel a pending deferred request.<a href="#section-7.4-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
