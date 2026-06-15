@@ -770,7 +770,7 @@ aligned with the corresponding codes in {{Section 3.5 of RFC8628}}:
 
 `slow_down`
 : The client is polling faster than `interval` allows. The client MUST
-  increase its polling interval by at least 5 seconds.
+  increase its polling interval as described in {{token-endpoint-polling}}.
 
 `expired_token`
 : The `deferral_token` has expired. The client MUST stop polling with
