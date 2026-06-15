@@ -886,9 +886,7 @@ Content-Type: application/json
 }
 ~~~
 
-For valid requests, the client SHOULD respond with HTTP 204 No Content.
-The authorization server MUST also accept HTTP 200 OK responses, and
-MUST ignore any HTTP body in the response.
+For valid requests, the client MUST respond with HTTP 204 No Content.
 The client MUST NOT respond with an HTTP 3xx status code; the
 authorization server MUST NOT follow redirects.
 
