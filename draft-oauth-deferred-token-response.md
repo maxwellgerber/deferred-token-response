@@ -1010,6 +1010,15 @@ in {{iana-considerations}}. An authorization server that supports this
 specification MUST list
 `urn:ietf:params:oauth:token-type:deferral-token` in this array.
 
+Clients SHOULD check that
+`urn:ietf:params:oauth:token-type:deferral-token` is present in
+`revocation_endpoint_token_type_values_supported` before relying on
+cancellation. An authorization server that does not advertise support
+will return HTTP 200 OK for any revocation request per
+{{Section 2.2 of RFC7009}}, which is indistinguishable from a
+successful cancellation. Clients that skip this check risk silently
+failing to cancel a pending deferred request.
+
 # Implementation Considerations
 
 ## Polling and Callback Together
