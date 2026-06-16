@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-14T02:40:13.030110+00:00",
+  "timestamp": "2026-06-16T02:46:49.177556+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -440,7 +440,7 @@
       "id": "I_kwDOSeoW_M8AAAABDFB_xw",
       "title": "Cancellation discovery before using",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/16",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "fkj",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -449,8 +449,8 @@
       ],
       "body": "A client could call the revoke endpoint against a non-aware AS. The client would then think the cancellation succeeded even though it didn't.\nI think we should add guidance:\n> Clients SHOULD check `revocation_endpoint_token_type_values_supported` before relying on cancellation.",
       "createdAt": "2026-05-22T09:35:47Z",
-      "updatedAt": "2026-05-22T09:35:47Z",
-      "closedAt": null,
+      "updatedAt": "2026-06-15T20:39:12Z",
+      "closedAt": "2026-06-15T20:39:12Z",
       "comments": []
     },
     {
@@ -476,7 +476,7 @@
       "id": "I_kwDOSeoW_M8AAAABDFDzZw",
       "title": "Normative references are tagged as informative",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/18",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "fkj",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -485,8 +485,8 @@
       ],
       "body": "The references block lists RFC 6750, RFC 8628, and RFC 8705 under `informative`:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L46-L73\n\nBut RFC 6750 grounds a MUST for the callback Bearer header:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L862-L867\n\nAnd RFC 8628 grounds MUSTs for error code semantics:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L763-L765\n\nRFC 8705 grounds a MUST option in \u00a79.1.\n\nWe should promote RFC 6750, RFC 8628, and RFC 8705 to normative references.",
       "createdAt": "2026-05-22T09:40:07Z",
-      "updatedAt": "2026-05-22T09:40:07Z",
-      "closedAt": null,
+      "updatedAt": "2026-06-15T20:38:42Z",
+      "closedAt": "2026-06-15T20:38:42Z",
       "comments": []
     },
     {
@@ -566,7 +566,7 @@
       "id": "I_kwDOSeoW_M8AAAABDFTWww",
       "title": "Duplicate \"increase polling interval\" rules",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/23",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "fkj",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -575,8 +575,8 @@
       ],
       "body": "The \"increase polling interval by at least 5 seconds\" rule appears in the polling-interval text:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L685-L688\n\nAnd again in the `slow_down` error definition:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L771-L773\n\nI think we should deduplicate by removing the normative language in the definition.",
       "createdAt": "2026-05-22T10:22:03Z",
-      "updatedAt": "2026-05-22T10:22:03Z",
-      "closedAt": null,
+      "updatedAt": "2026-06-15T20:39:01Z",
+      "closedAt": "2026-06-15T20:39:01Z",
       "comments": []
     },
     {
@@ -584,7 +584,7 @@
       "id": "I_kwDOSeoW_M8AAAABDFUVfg",
       "title": "Callback HTTP 204 SHOULD",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/24",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "fkj",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -593,8 +593,8 @@
       ],
       "body": "The current SHOULD-204 + MUST-accept-200 wording for callbacks is a bit weird:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L889-L891\n\nI think we should pick one of these options instead:\n1. Change to say that client MUST respond with 204.\n2. Add text to say that client MUST respond with one of 200 or 204 (I.e. SHOULD 204, but the only other valid option is 200).",
       "createdAt": "2026-05-22T10:24:44Z",
-      "updatedAt": "2026-06-03T11:55:33Z",
-      "closedAt": null,
+      "updatedAt": "2026-06-15T20:38:53Z",
+      "closedAt": "2026-06-15T20:38:53Z",
       "comments": [
         {
           "author": "maxwellgerber",
@@ -664,5 +664,340 @@
       ]
     }
   ],
-  "pulls": []
+  "pulls": [
+    {
+      "number": 27,
+      "id": "PR_kwDOSeoW_M7mSIRl",
+      "title": "Change callback response from SHOULD 204 to MUST 204",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/27",
+      "state": "MERGED",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Remove the fallback language requiring servers to accept 200 OK, since clients are now required to respond with 204 No Content.\r\n\r\nCloses #24",
+      "createdAt": "2026-06-14T17:59:53Z",
+      "updatedAt": "2026-06-15T20:38:52Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "max/204-SHOULD",
+      "headRefOid": "2cc687405fe8493d53cd98be62262032d92c0ee1",
+      "closedAt": "2026-06-15T20:38:52Z",
+      "mergedAt": "2026-06-15T20:38:51Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "f91d2424aa7dc68979d5b649c67efb670c158e30"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDBBkeA",
+          "commit": {
+            "abbreviatedOid": "2cc6874"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-06-15T12:33:45Z",
+          "updatedAt": "2026-06-15T12:33:45Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 28,
+      "id": "PR_kwDOSeoW_M7mSm7L",
+      "title": "Remove duplicate polling interval rule from slow_down error definition",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/28",
+      "state": "MERGED",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #23. The requirement to increase the polling interval by at least 5 seconds was duplicated in both the polling section and the slow_down error definition. Replace the duplicate normative text with a cross-reference to the canonical location.",
+      "createdAt": "2026-06-14T18:53:18Z",
+      "updatedAt": "2026-06-15T20:39:01Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "fix/duplicate-slow-down-rule",
+      "headRefOid": "8080878be9c59ce5188c622d462aed5cdaba3f91",
+      "closedAt": "2026-06-15T20:39:00Z",
+      "mergedAt": "2026-06-15T20:39:00Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "fb3c5c3f13322150dd5d9169682e30aec9c77db6"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDBBtSg",
+          "commit": {
+            "abbreviatedOid": "8080878"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-06-15T12:34:07Z",
+          "updatedAt": "2026-06-15T12:34:07Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 29,
+      "id": "PR_kwDOSeoW_M7mSqG3",
+      "title": "editorial: replace normative \"should\" with descriptive \"will typically\"",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/29",
+      "state": "OPEN",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "The spec cannot bind authorization servers that don't implement it, so using \"should\" (an RFC 2119 keyword) to describe their behavior was inappropriate. Fixes #19.",
+      "createdAt": "2026-06-14T18:59:19Z",
+      "updatedAt": "2026-06-15T12:34:53Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "editorial/fix-lowercase-should-issue-19",
+      "headRefOid": "d4d6d9fcd447dded5b90467472b543e579a05f66",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Mentioned this in my review for #33 as well. Feel free to resolve that if this gets merged first.",
+          "createdAt": "2026-06-15T12:34:48Z",
+          "updatedAt": "2026-06-15T12:34:48Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDBCAWQ",
+          "commit": {
+            "abbreviatedOid": "d4d6d9f"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-06-15T12:34:53Z",
+          "updatedAt": "2026-06-15T12:34:53Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 30,
+      "id": "PR_kwDOSeoW_M7mSrct",
+      "title": "Promote RFC6750, RFC8628, RFC8705 to normative references",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/30",
+      "state": "MERGED",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "These three RFCs underpin MUST-level requirements in the spec and were incorrectly listed as informative. Also remove the `?` citation prefix from body references to RFC8705 and RFC8628, which marks them as informative in kramdown-rfc.\r\n\r\nFixes #18",
+      "createdAt": "2026-06-14T19:01:35Z",
+      "updatedAt": "2026-06-15T20:38:42Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "fix/normative-references",
+      "headRefOid": "c41d734ad28c8347c61a15c8065932cd1828ae54",
+      "closedAt": "2026-06-15T20:38:41Z",
+      "mergedAt": "2026-06-15T20:38:41Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "588c620eeb1ff35a30cd3ee59dbddb0448a6ebf2"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDBCIdg",
+          "commit": {
+            "abbreviatedOid": "c41d734"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-06-15T12:35:12Z",
+          "updatedAt": "2026-06-15T12:35:12Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 31,
+      "id": "PR_kwDOSeoW_M7mTHqO",
+      "title": "Add client guidance for cancellation discovery",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/31",
+      "state": "MERGED",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Clients calling revocation on a non-aware AS receive HTTP 200 OK (RFC7009 \u00a72.2), which is indistinguishable from success. Added a SHOULD requirement for clients to check\r\nrevocation_endpoint_token_type_values_supported before relying on cancellation to avoid silently failing to cancel a pending request.\r\n\r\nCloses #16",
+      "createdAt": "2026-06-14T19:50:50Z",
+      "updatedAt": "2026-06-15T20:39:11Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "fix/cancellation-discovery-client-guidance",
+      "headRefOid": "99e8e6787d604ebdfc4c78a1cfdab09b126a1b18",
+      "closedAt": "2026-06-15T20:39:11Z",
+      "mergedAt": "2026-06-15T20:39:11Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "5216dbde63494efe65ecd2fe12df360892b7af1e"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDBClGA",
+          "commit": {
+            "abbreviatedOid": "99e8e67"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-06-15T12:36:23Z",
+          "updatedAt": "2026-06-15T12:36:23Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 32,
+      "id": "PR_kwDOSeoW_M7mTIZi",
+      "title": "Align error responses across polling and revocation endpoints",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/32",
+      "state": "OPEN",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #3. Two changes:\r\n\r\n1. Revocation semantics: merge old clauses 2 and 3 so that a deferral token recognized but issued to a different client returns HTTP 200 OK rather than invalid_client. Returning invalid_client allowed an authenticated attacker to probe whether a deferral token exists for another client, violating RFC 7009's indistinguishability requirement. \r\n\r\n2. Token endpoint error responses: tighten the error_description SHOULD so the redeemed/unknown distinction is only surfaced when the server has confirmed the token belongs to the requesting client. Cross-client and unrecognized tokens MUST be treated as unknown with no distinguishing detail. Also update the cross-reference from Section 5.2 to the more precise Section 3.2.4 of OAUTH-2.1.",
+      "createdAt": "2026-06-14T19:52:05Z",
+      "updatedAt": "2026-06-15T12:47:46Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "fix/issue-3-align-error-responses",
+      "headRefOid": "940e722b2c67004377b04829fc7997f4d3e6a7a0",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDBH9mw",
+          "commit": {
+            "abbreviatedOid": "940e722"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "Generally fine, but see my one comment.",
+          "createdAt": "2026-06-15T12:47:32Z",
+          "updatedAt": "2026-06-15T12:47:46Z",
+          "comments": [
+            {
+              "originalPosition": 44,
+              "body": "RFC 7009 doesn't actually use the word indistinguishability, so we should probably specify more precisely what we mean here.",
+              "createdAt": "2026-06-15T12:47:32Z",
+              "updatedAt": "2026-06-15T12:47:46Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 33,
+      "id": "PR_kwDOSeoW_M7mTXv8",
+      "title": "Replace 2xx response with 4xx error response",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/33",
+      "state": "OPEN",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Adopts feedback from email discussion to:\r\n- Replaces the `200 + token_type + token` result with a `400 + deferred_token` error result.\r\n- Introduce the `completion_mode` signaling parameter instead of `deferrable` parameter\r\n\r\nA future PR (or... potentially future spec) can profile the error result to introduce the `interaction_uri` field from JAG-IR, transforming JAG-IR into a profile of DTR.\r\n\r\nThis touches on a number of open issues:\r\n- #1: deferred response is now a 400 error with a top-level deferral_token and no access_token/token_type, so naive clients fail closed (resolved by the earlier response-shape redesign)\r\n- #9: note that completion_mode is conveyed wherever the authorization request's parameters are, including the PAR body and a JAR request object\r\n- #11: successful polling response carries the originating grant's issued_token_type when defined, and never the deferral-token type\r\n- #17: require Cache-Control: no-store on every error response (including the deferred 400 and authorization_pending/slow_down) to prevent a cached pending response from causing indefinite polling\r\n- #21: split the inconsistent-hint rule into three explicit cases\r\n- #22: deduplicate the completion_mode validation rule, stating it once in the parameter definition and cross-referencing it from both validation sections\r\n- #26: add a \"preceding endpoint\" definition to Conventions and Definitions\r\n\r\n  Closes #1, #9, #11, #17, #21, #22, #26",
+      "createdAt": "2026-06-14T20:20:11Z",
+      "updatedAt": "2026-06-15T12:33:06Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "address-review-issues",
+      "headRefOid": "84270d72b69a8db8075747b72f8b573235e854a3",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDAZsOg",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "A few nits, but generally looks good.",
+          "createdAt": "2026-06-15T10:57:50Z",
+          "updatedAt": "2026-06-15T12:33:06Z",
+          "comments": [
+            {
+              "originalPosition": 52,
+              "body": "I think the examples in the middle of the definition makes it a little hard to read this sentence. How about something like (inspired by wording in https://datatracker.ietf.org/doc/html/rfc6749#section-3):\n\n```suggestion\n: Some grant types utilize multiple authorization server endpoints. For an originating grant whose flow begins at an endpoint other than the token endpoint, the preceding endpoint is the endpoint utilized just before the token endpoint. Examples include the authorization endpoint of the Authorization Code Grant ({{OAUTH-2.1}}), the device authorization endpoint of {{RFC8628}}, and the authorization challenge endpoint of {{FIPA}}. A grant that operates entirely at the token endpoint (for example, the Client Credentials Grant) has no preceding endpoint.\n```",
+              "createdAt": "2026-06-15T10:57:50Z",
+              "updatedAt": "2026-06-15T12:33:06Z"
+            },
+            {
+              "originalPosition": 199,
+              "body": "This seems like a normative requirement:\n```suggestion\nSHOULD silently ignore the value and complete the request synchronously\n```\n\nMight even upgrade to a MUST, though it's hard to normatively require anything for non-implementers.",
+              "createdAt": "2026-06-15T11:06:14Z",
+              "updatedAt": "2026-06-15T12:33:06Z"
+            },
+            {
+              "originalPosition": 496,
+              "body": "This reads a but confusingly: it's not a token response, but it still includes a token?\nMaybe we should rename `deferral_token` to something else, or say that it is not an access token response?",
+              "createdAt": "2026-06-15T12:06:17Z",
+              "updatedAt": "2026-06-15T12:33:06Z"
+            },
+            {
+              "originalPosition": 589,
+              "body": "Is this still relevant now that it is a new parameter instead of a token in the response on line 652?",
+              "createdAt": "2026-06-15T12:08:04Z",
+              "updatedAt": "2026-06-15T12:33:06Z"
+            },
+            {
+              "originalPosition": 597,
+              "body": "Should probably reference RFC 7234 which defines the header.",
+              "createdAt": "2026-06-15T12:25:56Z",
+              "updatedAt": "2026-06-15T12:33:06Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
