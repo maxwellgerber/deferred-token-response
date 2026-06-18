@@ -181,13 +181,15 @@ originating grant
   request eventually resolves.
 
 preceding endpoint
-: For an originating grant whose flow begins at an endpoint before the
-  token endpoint — such as the authorization endpoint of the
-  Authorization Code Grant ({{OAUTH-2.1}}), the device authorization
-  endpoint of {{RFC8628}}, or the authorization challenge endpoint of
-  {{FIPA}} — that earlier endpoint. A grant that operates entirely at
-  the token endpoint (for example, the Client Credentials Grant) has no
-  preceding endpoint.
+: Some grant types utilize multiple authorization server endpoints.
+  For an originating grant whose flow begins at an endpoint other
+  than the token endpoint, the preceding endpoint is the endpoint
+  utilized just before the token endpoint. Examples include the
+  authorization endpoint of the Authorization Code Grant ({{OAUTH-2.1}}),
+  the device authorization endpoint of {{RFC8628}}, and the authorization
+  challenge endpoint of {{FIPA}}. A grant that operates entirely at
+  the token endpoint (for example, the Client Credentials Grant)
+  has no preceding endpoint.
 
 
 # Overview
