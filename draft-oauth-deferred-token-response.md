@@ -308,7 +308,7 @@ specification through the `deferred_token_response_supported`
 authorization server metadata parameter ({{iana-considerations}}). A
 client MAY send `completion_mode=deferred` to an authorization server
 that does not advertise support; such an authorization server
-should silently ignore the value and complete the request synchronously
+SHOULD silently ignore the parameter and complete the request synchronously
 per its originating grant's rules.
 
 ## Pre-Token Hints {#pre-token-hints}
