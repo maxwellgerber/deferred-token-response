@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-16T02:46:49.177556+00:00",
+  "timestamp": "2026-06-18T02:40:18.371494+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -754,21 +754,21 @@
       "id": "PR_kwDOSeoW_M7mSqG3",
       "title": "editorial: replace normative \"should\" with descriptive \"will typically\"",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/29",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "maxwellgerber",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "The spec cannot bind authorization servers that don't implement it, so using \"should\" (an RFC 2119 keyword) to describe their behavior was inappropriate. Fixes #19.",
       "createdAt": "2026-06-14T18:59:19Z",
-      "updatedAt": "2026-06-15T12:34:53Z",
+      "updatedAt": "2026-06-18T02:38:13Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "editorial/fix-lowercase-should-issue-19",
       "headRefOid": "d4d6d9fcd447dded5b90467472b543e579a05f66",
-      "closedAt": null,
+      "closedAt": "2026-06-18T02:38:13Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -940,13 +940,13 @@
       "labels": [],
       "body": "Adopts feedback from email discussion to:\r\n- Replaces the `200 + token_type + token` result with a `400 + deferred_token` error result.\r\n- Introduce the `completion_mode` signaling parameter instead of `deferrable` parameter\r\n\r\nA future PR (or... potentially future spec) can profile the error result to introduce the `interaction_uri` field from JAG-IR, transforming JAG-IR into a profile of DTR.\r\n\r\nThis touches on a number of open issues:\r\n- #1: deferred response is now a 400 error with a top-level deferral_token and no access_token/token_type, so naive clients fail closed (resolved by the earlier response-shape redesign)\r\n- #9: note that completion_mode is conveyed wherever the authorization request's parameters are, including the PAR body and a JAR request object\r\n- #11: successful polling response carries the originating grant's issued_token_type when defined, and never the deferral-token type\r\n- #17: require Cache-Control: no-store on every error response (including the deferred 400 and authorization_pending/slow_down) to prevent a cached pending response from causing indefinite polling\r\n- #21: split the inconsistent-hint rule into three explicit cases\r\n- #22: deduplicate the completion_mode validation rule, stating it once in the parameter definition and cross-referencing it from both validation sections\r\n- #26: add a \"preceding endpoint\" definition to Conventions and Definitions\r\n\r\n  Closes #1, #9, #11, #17, #21, #22, #26",
       "createdAt": "2026-06-14T20:20:11Z",
-      "updatedAt": "2026-06-15T12:33:06Z",
+      "updatedAt": "2026-06-18T02:37:37Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "address-review-issues",
-      "headRefOid": "84270d72b69a8db8075747b72f8b573235e854a3",
+      "headRefOid": "ea838719d3c407920ce9e39b687b606aff24e64d",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -994,6 +994,190 @@
               "body": "Should probably reference RFC 7234 which defines the header.",
               "createdAt": "2026-06-15T12:25:56Z",
               "updatedAt": "2026-06-15T12:33:06Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDGbscQ",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "mcguinness",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "  Strong convergence with my exploration\n\n  - 400 + `authorization_pending` encoding. Same choice, same RFC 8628 alignment, same naive-client-safety rationale. The deferral token now lives outside the access_token slot, eliminating the credential-confusion risk.\n  - `completion_mode` request parameter with deferred as initial value. Same parameter name, OAuth Completion Mode Values registry, & Specification Required policy.\n  - Cache-Control: no-store on all error responses including pending/slow_down. Preserves the substrate's response-handling rules.\n  - Successful polling response carries the originating grant's `issued_token_type` and never `urn:ietf:params:oauth:token-type:deferral-token`. Same conclusion; the deferral artifact is segregated to the deferred response.\n  - `authorization_pending` reused for both initial deferred response and subsequent polling responses. Same dual-role choice, with the rotation/repeat rules folded in correctly.",
+          "createdAt": "2026-06-16T03:32:32Z",
+          "updatedAt": "2026-06-16T03:50:17Z",
+          "comments": [
+            {
+              "originalPosition": 496,
+              "body": "I preferred `deferred_code` in my exploration to address a similar concern and align better with device_code/auth_req_id precedent (RFC 8628, CIBA) ",
+              "createdAt": "2026-06-16T03:32:32Z",
+              "updatedAt": "2026-06-16T03:50:17Z"
+            },
+            {
+              "originalPosition": 646,
+              "body": "This is a clean recipe but has limits:\n\n  - It assumes the immediate result and the deferred result are independent. For interim ID Tokens (where the interim and complete representations are semantically tied \u2014 same claim set, one populated now, one populated later), the parallel-grant approach can't model the relationship.\n  - It requires the client to initiate two grants. For high-frequency calls this is more wire overhead than a single response with both artifacts.\n\nMy substrate exploration took an alternate approach: a partial completion response (200 OK with both an issued artifact AND a deferred_code for upgrade) carries both in one request:\n\n  POST /token grant_type=authorization_code&code=...&completion_mode=deferred grant_mode=interim\n  \u2192 200 OK with id_token (interim claims) + deferred_code + deferred_code_expires_in\n\nContinuation polling returns the upgraded artifact. The partial completion wire shape is substrate-level; the interim semantics (replacement on upgrade) live in a companion spec (my example was draft-mcguinness-oauth-interim-grant-mode)",
+              "createdAt": "2026-06-16T03:37:19Z",
+              "updatedAt": "2026-06-16T03:50:17Z"
+            },
+            {
+              "originalPosition": 202,
+              "body": "The PR keeps a hint-only model: `completion_mode=deferred`on the preceding endpoint is an advance hint, but the deferred response itself only comes from the token endpoint. My substrate exploration supports direct deferral at the authorization endpoint, the redirect carries a `deferred_code` instead of code, so no authorization code is ever issued for flows that won't complete synchronously.\n\nConcretely, the substrate exploration covers a flow like:\n\n```\nGET /authorize?...&completion_mode=deferred  \u2192 302 with deferred_code in redirect (no code)\nPOST /token grant_type=urn:...:deferred_code&deferred_code=...&code_verifier=...\n```\n\nDTR's flow always issues a code first:\n\n```\nGET /authorize?...&completion_mode=deferred  \u2192 302 with code\nPOST /token grant_type=authorization_code&code=...&completion_mode=deferred  \u2192 400 deferral_token\n```\n\nThe difference matters for cases where the authorization decision itself is what's deferred (front-channel step-up, deferred ID Token issuance). The hint-only model still issues an authorization code while the underlying decision is pending, which is awkward for those cases.\n\nIf interim ID Tokens or front-channel step-up are in scope, direct authorization-endpoint deferral needs to be considered. If they're out of scope, DTR's hint-only model is simpler and adequate.",
+              "createdAt": "2026-06-16T03:41:31Z",
+              "updatedAt": "2026-06-16T03:50:17Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDJb_HA",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "Hello @maxwellgerber, I've added some observations as well",
+          "createdAt": "2026-06-16T12:12:45Z",
+          "updatedAt": "2026-06-16T13:08:16Z",
+          "comments": [
+            {
+              "originalPosition": 199,
+              "body": "This paragraph seems to narrow down the behavior of \"silently ignore\" only in cases where `completion_mode` is `deferred`. \n\nIs our intention to instruct implementers on  behavior of the `deferral` value, or for all of the `completion_mode` values that may be available in the future?",
+              "createdAt": "2026-06-16T12:12:45Z",
+              "updatedAt": "2026-06-16T13:08:16Z"
+            },
+            {
+              "originalPosition": 202,
+              "body": "I have use cases that are front-channel step-up, and I understand you point of view. The authorization code serves as a transport rather represents the outcome of the authorization request, and this behavior may require additional implementation to provide proper user feedback and application flow control",
+              "createdAt": "2026-06-16T12:48:46Z",
+              "updatedAt": "2026-06-16T13:08:16Z"
+            },
+            {
+              "originalPosition": 249,
+              "body": "Being this is not a pairwise combination, I'm afraid we could be contributing  on a scenario where intermitent errors might occur - and they may be tricky to track. In many implementations, the application requesting the token endpoint is not the same as the one requesting authorization.\n\nIf this is a behavior we want to keep, we could probably add an implementation consideration",
+              "createdAt": "2026-06-16T13:06:50Z",
+              "updatedAt": "2026-06-16T13:08:16Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDXijbw",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-18T02:03:54Z",
+          "updatedAt": "2026-06-18T02:03:54Z",
+          "comments": [
+            {
+              "originalPosition": 646,
+              "body": "> It assumes the immediate result and the deferred result are independent.\r\n\r\nYes, that's the main gap. I think this gap will be more apparent when it comes to access tokens, especially if implementers try to encode some semblance of RAR payloads where the content changes often. I'm not as worried about the semantic ties of ID Tokens - because ID Token claims tend to be fairly static and `?prompt=none` has always existed.\r\n\r\nI think this will be something we explicitly look for feedback on from the wider community. If there is a clear demand to support the intermediate+deferred result we should revisit the model from your draft. The chief problem with a 200 response is that it creates an explosion of options:\r\n- If DTR isn't needed, return 200 + tokens\r\n- If DTR is needed but we can return an intermediate result, return 200 + intermediate tokens + deferred code\r\n- If DTR is needed and we cannot return a result, return 400 + deferred code \r\n\r\nAdd in a JAG-IR profile where the deferred code can _also_ include a URL for user interaction and we have a lot of complexity. \r\n\r\nI wonder if we can leave the door open in such a way that this RFC defines the 400 case, and a _future_ RFC could define intermediate results + deferred code in the 200 case, if the ecosystem wants it?\r\n",
+              "createdAt": "2026-06-18T02:03:54Z",
+              "updatedAt": "2026-06-18T02:03:54Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDXjKIw",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-18T02:07:47Z",
+          "updatedAt": "2026-06-18T02:07:47Z",
+          "comments": [
+            {
+              "originalPosition": 202,
+              "body": "> If interim ID Tokens or front-channel step-up are in scope, direct authorization-endpoint deferral needs to be considered. If they're out of scope, DTR's hint-only model is simpler and adequate.\r\n\r\nResponded above - I wonder if we can leave the door open on this draft s.t. a future draft can define interim results - like interim ID tokens on top.\r\n\r\n> The difference matters for cases where the authorization decision itself is what's deferred (front-channel step-up, deferred ID Token issuance). The hint-only model still issues an authorization code while the underlying decision is pending, which is awkward for those cases.\r\n\r\nIf we issue a `deferred_code` directly from the /authorize endpoint and not from the /token endpoint, then we special-case the authorization code flow in a way that puts us at odds with using DTR for other grant types that only deal with the /token endpoint. Not insurmountable, but I would prefer to keep all grants the same if possible. ",
+              "createdAt": "2026-06-18T02:07:47Z",
+              "updatedAt": "2026-06-18T02:07:47Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDXjZ5A",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-18T02:09:18Z",
+          "updatedAt": "2026-06-18T02:09:19Z",
+          "comments": [
+            {
+              "originalPosition": 199,
+              "body": "Good catch - since we are defining the `completion_mode ` parameter we should define the default behavior for all cases where the AS does not support it.",
+              "createdAt": "2026-06-18T02:09:18Z",
+              "updatedAt": "2026-06-18T02:09:19Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDXj7hg",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-18T02:12:19Z",
+          "updatedAt": "2026-06-18T02:12:19Z",
+          "comments": [
+            {
+              "originalPosition": 249,
+              "body": "What if we tightened the behavior of the AS, such that it always rejected the error with `invalid_request`? ",
+              "createdAt": "2026-06-18T02:12:19Z",
+              "updatedAt": "2026-06-18T02:12:19Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDXlwpw",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-18T02:24:05Z",
+          "updatedAt": "2026-06-18T02:24:06Z",
+          "comments": [
+            {
+              "originalPosition": 496,
+              "body": "I like `deferral_code` - `deferred_` implies that it is a regular code that has been deferred, while `deferral_` indicates the `code` identifies the deferral instance itself, which I think is closer to what we want to represent.\r\n\r\nI'll do a rename in a separate PR - it is a rather substantial edit.",
+              "createdAt": "2026-06-18T02:24:06Z",
+              "updatedAt": "2026-06-18T02:24:06Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDXlzLw",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-18T02:24:21Z",
+          "updatedAt": "2026-06-18T02:24:21Z",
+          "comments": [
+            {
+              "originalPosition": 589,
+              "body": "Let's get rid of this para",
+              "createdAt": "2026-06-18T02:24:21Z",
+              "updatedAt": "2026-06-18T02:24:21Z"
             }
           ]
         }
