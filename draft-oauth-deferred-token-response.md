@@ -82,7 +82,7 @@ This document defines the Deferred Token Response (DTR) extension
 for OAuth 2.1. In existing OAuth grants, the token endpoint either
 issues an access token or returns an error.
 DTR establishes a generic asynchronous token request mechanism that any
-OAuth originating endpoint may plug into.
+OAuth grant may plug into.
 In DTR-aware flows, the authorization server returns a
 `deferral_token` and a polling interval, indicating that the final
 token response will be available at a later time.
@@ -568,11 +568,9 @@ DTR, with the following additions:
 - If the originating grant has a preceding endpoint and the client
   sent `completion_mode=deferred` on that earlier request, apply the
   hint-consistency rule of {{pre-token-hints}}: if the token request
-  does not also include `deferred` in `completion_mode` and the
-  authorization server has committed to deferral-aware behavior on the
-  strength of the hint such that it cannot complete the request
-  synchronously, the authorization server MUST reject the request with
-  the error `invalid_request`.
+  does not also include `deferred` in `completion_mode`, the
+  authorization server MUST reject the request with the error
+  `invalid_request`.
 - If `client_notification_token` is present, verify that the value
   conforms to the entropy requirements above. If not, the
   authorization server MAY reject the request with `invalid_request`.
@@ -776,9 +774,9 @@ authorization server returns an error response per
 The authorization server MUST include the `Cache-Control: no-store`
 header field from {{Section 5.2.2.3 of RFC7234}} in every error response
 defined in this section, including the deferred response of
-{{token-endpoint-deferred-response}} and any`authorization_pending` or
+{{token-endpoint-deferred-response}} and any `authorization_pending` or
 `slow_down` response. This prevents an intermediary or the client from
-caching a transient`authorization_pending` response and replaying it,
+caching a transient `authorization_pending` response and replaying it,
 which could otherwise cause the client to poll indefinitely.
 
 In addition to the error codes defined in {{Section 5.2 of OAUTH-2.1}},
@@ -817,10 +815,9 @@ The following additional rules apply:
   treat both as terminal and MUST NOT retry with the same
   `deferral_token`.
 
-- A token request that contradicts a `completion_mode=deferred` hint
-  sent on the originating grant's preceding-endpoint request, where the
-  authorization server has already committed to deferral-aware
-  behavior on the strength of that hint, MUST result in an
+- A token request that omits `deferred` from `completion_mode` after
+  a `completion_mode=deferred` hint was sent on the originating
+  grant's preceding-endpoint request MUST result in an
   `invalid_request` error per {{pre-token-hints}}.
 
 - If a client polls faster than `interval` repeatedly, the authorization
