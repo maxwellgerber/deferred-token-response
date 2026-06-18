@@ -342,17 +342,7 @@ A client that has sent `completion_mode=deferred` on the preceding
 request MUST also include `deferred` among the `completion_mode` values
 on the resulting token request. If the client instead omits `deferred`
 (or omits the parameter) at the token endpoint, the authorization
-server's behavior depends on whether it acted on the hint:
-
-- If the authorization server did not commit to deferral-aware
-  behavior, it MUST proceed synchronously per the originating grant's
-  rules; the inconsistent hint has no effect.
-- If the authorization server committed to deferral-aware behavior but
-  can still satisfy the request synchronously, it MUST proceed
-  synchronously per the originating grant's rules.
-- If the authorization server committed to deferral-aware behavior and
-  cannot satisfy the request synchronously, it MUST reject the request
-  with the error `invalid_request`.
+server MUST reject the request with the error `invalid_request`.
 
 A client that did not send a hint MAY still send
 `completion_mode=deferred` at the token endpoint, and the authorization
