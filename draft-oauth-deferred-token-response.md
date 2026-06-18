@@ -965,8 +965,8 @@ deferral tokens, with the following semantics:
 2. If the deferral token is unrecognized, was issued to a different
    authenticated client, or has already been redeemed, cancelled, or
    expired — the authorization server MUST return HTTP 200 OK without
-   modifying state, per {{Section 2.2 of RFC7009}}. This preserves the
-   indistinguishability property required by that specification.
+   modifying state. Invalid tokens do not cause an error response, per
+   {{Section 2.2 of RFC7009}}.
 3. If the deferred request has already resolved successfully and the
    resulting access token has been delivered to the client, the
    authorization server MUST NOT revoke that access token as a side
