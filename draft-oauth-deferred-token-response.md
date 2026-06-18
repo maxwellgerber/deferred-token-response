@@ -785,10 +785,14 @@ The following additional rules apply:
 
 - A `deferral_token` that is not recognized, was issued to a
   different client, or has already been redeemed MUST result in an
-  `invalid_grant` error per {{Section 5.2 of OAUTH-2.1}}. The
-  `error_description` SHOULD distinguish between "already redeemed"
-  and "unknown identifier" for diagnostic purposes; clients MUST
-  treat both as terminal and MUST NOT retry with the same
+  `invalid_grant` error per {{Section 3.2.4 of OAUTH-2.1}}. When the
+  server has confirmed that the token was issued to the authenticated
+  client, the `error_description` SHOULD distinguish between "already
+  redeemed" and "unknown identifier" for diagnostic purposes. When the
+  token is unrecognized or was issued to a different client, the server
+  MUST treat it as unknown and MUST NOT provide detail that would allow
+  distinguishing these cases. Clients MUST treat all `invalid_grant`
+  responses as terminal and MUST NOT retry with the same
   `deferral_token`.
 
 - A token request that contradicts a `deferrable=true` hint sent on
@@ -956,23 +960,19 @@ deferral tokens, with the following semantics:
    delivery has not yet been initiated, and MUST cause subsequent
    polling requests against the deferral token to return
    `access_denied` per {{token-endpoint-error-responses}}.
-2. If the deferral token is recognized but was issued to a different
-   authenticated client, the authorization server MUST treat the
-   request as failed authentication and return `invalid_client` per
-   {{Section 2.2 of RFC7009}}, without modifying state.
-3. If the deferral token is unrecognized — including the case where
-   it has already been redeemed, cancelled, or expired — the
-   authorization server MUST return HTTP 200 OK without modifying
-   state, per {{Section 2.2 of RFC7009}}. This preserves the
-   indistinguishability property required by that specification.
-4. If the deferred request has already resolved successfully and the
+2. If the deferral token is unrecognized, was issued to a different
+   authenticated client, or has already been redeemed, cancelled, or
+   expired — the authorization server MUST return HTTP 200 OK without
+   modifying state. Invalid tokens do not cause an error response, per
+   {{Section 2.2 of RFC7009}}.
+3. If the deferred request has already resolved successfully and the
    resulting access token has been delivered to the client, the
    authorization server MUST NOT revoke that access token as a side
    effect of revoking the deferral token. The two are independent
    credentials with independent lifetimes; clients that need to
    revoke an issued access token MUST do so explicitly per
    {{RFC7009}}.
-5. If the deferred request has resolved successfully but the access
+4. If the deferred request has resolved successfully but the access
    token has not yet been delivered to the client (for example, a
    resolution committed between the last poll and the cancellation),
    the authorization server MUST treat the deferral token as
@@ -993,7 +993,7 @@ response timing, authorization servers SHOULD process revocation
 requests in approximately constant time regardless of whether the
 supplied `token` value is recognized. This complements the
 indistinguishability of the response codes required by clauses 1 and
-3 above.
+2 above.
 
 ## Idempotency and Retry
 
