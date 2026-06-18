@@ -46,6 +46,7 @@ author:
 normative:
   RFC2119:
   RFC7009:
+  RFC7234:
   RFC7591:
   RFC8126:
   RFC8174:
@@ -783,12 +784,12 @@ authorization server returns an error response per
 {{Section 5.2 of OAUTH-2.1}}.
 
 The authorization server MUST include the `Cache-Control: no-store`
-header field in every error response defined in this section, including
-the deferred response of {{token-endpoint-deferred-response}} and any
-`authorization_pending` or `slow_down` response. This prevents an
-intermediary or the client from caching a transient
-`authorization_pending` response and replaying it, which could otherwise
-cause the client to poll indefinitely.
+header field from {{Section 5.2.2.3 of RFC7234}} in every error response
+defined in this section, including the deferred response of
+{{token-endpoint-deferred-response}} and any`authorization_pending` or
+`slow_down` response. This prevents an intermediary or the client from
+caching a transient`authorization_pending` response and replaying it,
+which could otherwise cause the client to poll indefinitely.
 
 In addition to the error codes defined in {{Section 5.2 of OAUTH-2.1}},
 this specification uses the following error codes, with semantics
