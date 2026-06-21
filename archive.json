@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-18T02:40:18.371494+00:00",
+  "timestamp": "2026-06-21T02:43:39.076869+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -109,7 +109,7 @@
       "id": "I_kwDOSeoW_M8AAAABC9s7yw",
       "title": "Error responses across endpoints are not aligned",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/3",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "fkj",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -118,8 +118,8 @@
       ],
       "body": "\u00a74.5 distinguishes \"already redeemed\" vs. \"unknown identifier\" in `error_description`:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L786-L793\n\n\u00a75.2 says that revocation \"MUST cause subsequent polling requests against the deferral token to return `access_denied`\" and that the AS returns `invalid_client` for cross-client revocation:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L949-L998\n\nThis is an \"exists for some other client\" oracle observable by an authenticated attacker.\n\nI think there might be some potential attacks here that we should consider. We already refer to RFC 7009 about indistinguishability, but I don't think the design here actually provides indistinguishability.",
       "createdAt": "2026-05-21T10:47:30Z",
-      "updatedAt": "2026-06-03T12:23:42Z",
-      "closedAt": null,
+      "updatedAt": "2026-06-18T02:42:49Z",
+      "closedAt": "2026-06-18T02:42:49Z",
       "comments": [
         {
           "author": "maxwellgerber",
@@ -886,24 +886,26 @@
       "id": "PR_kwDOSeoW_M7mTIZi",
       "title": "Align error responses across polling and revocation endpoints",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/32",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "maxwellgerber",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "Fixes #3. Two changes:\r\n\r\n1. Revocation semantics: merge old clauses 2 and 3 so that a deferral token recognized but issued to a different client returns HTTP 200 OK rather than invalid_client. Returning invalid_client allowed an authenticated attacker to probe whether a deferral token exists for another client, violating RFC 7009's indistinguishability requirement. \r\n\r\n2. Token endpoint error responses: tighten the error_description SHOULD so the redeemed/unknown distinction is only surfaced when the server has confirmed the token belongs to the requesting client. Cross-client and unrecognized tokens MUST be treated as unknown with no distinguishing detail. Also update the cross-reference from Section 5.2 to the more precise Section 3.2.4 of OAUTH-2.1.",
       "createdAt": "2026-06-14T19:52:05Z",
-      "updatedAt": "2026-06-15T12:47:46Z",
+      "updatedAt": "2026-06-18T02:42:49Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "fix/issue-3-align-error-responses",
-      "headRefOid": "940e722b2c67004377b04829fc7997f4d3e6a7a0",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "3f10fa685a25c8bdeed3ebf72775ce572d8ce9a5",
+      "closedAt": "2026-06-18T02:42:48Z",
+      "mergedAt": "2026-06-18T02:42:48Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "82112588204957a7e81c2e908f7569ce7fc135bc"
+      },
       "comments": [],
       "reviews": [
         {
@@ -940,7 +942,7 @@
       "labels": [],
       "body": "Adopts feedback from email discussion to:\r\n- Replaces the `200 + token_type + token` result with a `400 + deferred_token` error result.\r\n- Introduce the `completion_mode` signaling parameter instead of `deferrable` parameter\r\n\r\nA future PR (or... potentially future spec) can profile the error result to introduce the `interaction_uri` field from JAG-IR, transforming JAG-IR into a profile of DTR.\r\n\r\nThis touches on a number of open issues:\r\n- #1: deferred response is now a 400 error with a top-level deferral_token and no access_token/token_type, so naive clients fail closed (resolved by the earlier response-shape redesign)\r\n- #9: note that completion_mode is conveyed wherever the authorization request's parameters are, including the PAR body and a JAR request object\r\n- #11: successful polling response carries the originating grant's issued_token_type when defined, and never the deferral-token type\r\n- #17: require Cache-Control: no-store on every error response (including the deferred 400 and authorization_pending/slow_down) to prevent a cached pending response from causing indefinite polling\r\n- #21: split the inconsistent-hint rule into three explicit cases\r\n- #22: deduplicate the completion_mode validation rule, stating it once in the parameter definition and cross-referencing it from both validation sections\r\n- #26: add a \"preceding endpoint\" definition to Conventions and Definitions\r\n\r\n  Closes #1, #9, #11, #17, #21, #22, #26",
       "createdAt": "2026-06-14T20:20:11Z",
-      "updatedAt": "2026-06-18T02:37:37Z",
+      "updatedAt": "2026-06-18T07:28:13Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "1ed97d4386e60f5010819a855ae9092dab6bbafb",
@@ -1180,6 +1182,68 @@
               "updatedAt": "2026-06-18T02:24:21Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDZJYRQ",
+          "commit": {
+            "abbreviatedOid": "84270d7"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-18T07:28:12Z",
+          "updatedAt": "2026-06-18T07:28:13Z",
+          "comments": [
+            {
+              "originalPosition": 646,
+              "body": "I agree @maxwellgerber, it's not a 100% clear that the interim ID token is really necessary. We originally introduced the concept more because we easily could than because we have a must-have use case. In every case it's more of a nice-to-have that lets relying parties do some work up-front if they are pretty confident that the final verdict will be good (this would of course need to be measured for each use case).\r\nI would support leaving it as an extension point if we can find a way to do that.",
+              "createdAt": "2026-06-18T07:28:13Z",
+              "updatedAt": "2026-06-18T07:28:13Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 34,
+      "id": "PR_kwDOSeoW_M7ofm2u",
+      "title": "Update Guilherme's organization and e-mail address",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/34",
+      "state": "MERGED",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I've got the approval I've been looking for over the past few months, so now I will officially mention my organization and work e-mail address",
+      "createdAt": "2026-06-19T19:26:33Z",
+      "updatedAt": "2026-06-19T20:59:06Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "82112588204957a7e81c2e908f7569ce7fc135bc",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "gniero-author-update",
+      "headRefOid": "5e5181e08cf1f50d6c4bcceffec806836f473fb0",
+      "closedAt": "2026-06-19T20:59:06Z",
+      "mergedAt": "2026-06-19T20:59:06Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "dade8f57b4cb62fefe36503e82aaade01144fc7e"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABDlJSWg",
+          "commit": {
+            "abbreviatedOid": "5e5181e"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "Great!",
+          "createdAt": "2026-06-19T20:58:58Z",
+          "updatedAt": "2026-06-19T20:58:58Z",
+          "comments": []
         }
       ]
     }
