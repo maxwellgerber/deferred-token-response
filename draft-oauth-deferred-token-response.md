@@ -243,11 +243,11 @@ deferred.
 |        |--(4) Token Request-------------->|     |
 |        | (code, completion_mode=deferred) |     |
 |        |<-(5) Deferred Response-----------|     |
-|        |   (deferral_code)               |     |
+|        |   (deferral_code)                |     |
 |        |                                  |     |---------+
 | Client |                                  | AS  |         |
 |        |--(6) Token Request-------------->|     |         |
-|        |   (deferral_code)               |     | (7) Complete request
+|        |   (deferral_code)                |     | (7) Complete request
 |        |<-Token Response------------------|     |         |
 |        |                                  |     |<--------+
 |        |               ...                |     |
@@ -255,7 +255,7 @@ deferred.
 |        |<-(8) Optional Callback-----------|     |
 |        |                                  |     |
 |        |--(6) Token Request-------------->|     |
-|        |   (deferral_code)               |     |
+|        |   (deferral_code)                |     |
 |        |<-Token Response------------------|     |
 |        |                                  |     |
 +--------+                                  +-----+
