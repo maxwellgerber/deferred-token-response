@@ -1573,11 +1573,11 @@ deferred.<a href="#section-3-4" class="pilcrow">¶</a></p>
 |        |--(4) Token Request--------------&gt;|     |
 |        | (code, completion_mode=deferred) |     |
 |        |&lt;-(5) Deferred Response-----------|     |
-|        |   (deferral_code)               |     |
+|        |   (deferral_code)                |     |
 |        |                                  |     |---------+
 | Client |                                  | AS  |         |
 |        |--(6) Token Request--------------&gt;|     |         |
-|        |   (deferral_code)               |     | (7) Complete request
+|        |   (deferral_code)                |     | (7) Complete request
 |        |&lt;-Token Response------------------|     |         |
 |        |                                  |     |&lt;--------+
 |        |               ...                |     |
@@ -1585,7 +1585,7 @@ deferred.<a href="#section-3-4" class="pilcrow">¶</a></p>
 |        |&lt;-(8) Optional Callback-----------|     |
 |        |                                  |     |
 |        |--(6) Token Request--------------&gt;|     |
-|        |   (deferral_code)               |     |
+|        |   (deferral_code)                |     |
 |        |&lt;-Token Response------------------|     |
 |        |                                  |     |
 +--------+                                  +-----+
