@@ -46,7 +46,9 @@ author:
 normative:
   RFC2119:
   RFC7009:
+  RFC7234:
   RFC7591:
+  RFC8126:
   RFC8174:
   RFC8414:
   RFC8693:
@@ -79,7 +81,9 @@ informative:
 This document defines the Deferred Token Response (DTR) extension
 for OAuth 2.1. In existing OAuth grants, the token endpoint either
 issues an access token or returns an error.
-DTR introduces a third outcome: the authorization server returns a
+DTR establishes a generic asynchronous token request mechanism that any
+OAuth grant may plug into.
+In DTR-aware flows, the authorization server returns a
 `deferral_token` and a polling interval, indicating that the final
 token response will be available at a later time.
 The client retrieves the eventual response by polling the token
@@ -151,9 +155,9 @@ This specification defines the following terms:
 deferral token
 : A unique, opaque, server-generated identifier that represents a
   single pending token request. The deferral token is carried
-  in the `access_token` parameter of the deferred token response per
-  the historical-name convention of {{Section 2.2.1 of RFC8693}}, and
-  is identified by the `issued_token_type` URI
+  in the `deferral_token` member of the deferred response
+  ({{token-endpoint-deferred-response}}) and is identified, when
+  used as a `token_type_hint` at the revocation endpoint, by the URI
   `urn:ietf:params:oauth:token-type:deferral-token`. The deferral
   token is bound to the issuing client and to a sender-constraining
   key per {{sender-constraint-requirements}}, and entitles the bound
@@ -177,6 +181,17 @@ originating grant
   whose successful token response shape is reused when the deferred
   request eventually resolves.
 
+preceding endpoint
+: Some grant types utilize multiple authorization server endpoints.
+  For an originating grant whose flow begins at an endpoint other
+  than the token endpoint, the preceding endpoint is the endpoint
+  utilized just before the token endpoint. Examples include the
+  authorization endpoint of the Authorization Code Grant ({{OAUTH-2.1}}),
+  the device authorization endpoint of {{RFC8628}}, and the authorization
+  challenge endpoint of {{FIPA}}. A grant that operates entirely at
+  the token endpoint (for example, the Client Credentials Grant)
+  has no preceding endpoint.
+
 
 # Overview
 
@@ -188,8 +203,8 @@ The flow proceeds entirely through the originating grant's existing
 endpoints. A grant becomes deferred when:
 
 1. The client signals willingness to accept a deferred response by
-   including `deferrable=true` on the originating grant's token
-   endpoint request.
+   including `deferred` among the values of the `completion_mode`
+   parameter on the originating grant's token endpoint request.
 2. The authorization server elects, on that token endpoint request,
    to return a deferred response in place of the normal token
    response. The deferred response carries a `deferral_token` instead
@@ -203,7 +218,8 @@ For an originating grant with a preceding endpoint — for example, the
 authorization endpoint of the Authorization Code Grant of
 {{OAUTH-2.1}}, the device authorization endpoint of {{RFC8628}}, or
 the authorization challenge endpoint of {{FIPA}} — the client MAY also
-send `deferrable=true` on the preceding request as an advance hint.
+send `completion_mode=deferred` on the preceding request as an advance
+hint.
 The hint allows the authorization server to commit to deferral-aware
 behavior before the token request — for example, by collecting different
 consent, by showing a different verification UX, or by selecting a different
@@ -216,33 +232,33 @@ authorization `code`) regardless of whether the request will be
 deferred.
 
 ~~~
-+--------+                            +-----+              +----------+
-|        |                            |     |              |          |
-|        |--(1) Auth Request--------->|     |              |          |
-|        |   (deferrable=true)        |     |              |          |
-|        |                            |     |<-(2) Obtain->| End-User |
-|        |                            |     |    input     |          |
-|        |<-(3) Auth Response (code)--|     |              |          |
-|        |                            |     |              +----------+
-|        |--(4) Token Request-------->|     |
-|        |   (code, deferrable=true)  |     |
-|        |<-(5) Deferred Response-----|     |
-|        |   (deferral_token)         |     |
-|        |                            |     |---------+
-| Client |                            | AS  |         |
-|        |--(6) Token Request-------->|     |         |
-|        |   (deferral_token)         |     | (7) Complete request
-|        |<-Token Response------------|     |         |
-|        |                            |     |<--------+
-|        |               ...          |     |
-|        |                            |     |
-|        |<-(8) Optional Callback-----|     |
-|        |                            |     |
-|        |--(6) Token Request-------->|     |
-|        |   (deferral_token)         |     |
-|        |<-Token Response------------|     |
-|        |                            |     |
-+--------+                            +-----+
++--------+                                  +-----+              +----------+
+|        |                                  |     |              |          |
+|        |--(1) Auth Request--------------->|     |              |          |
+|        |   (completion_mode=deferred)     |     |              |          |
+|        |                                  |     |<-(2) Obtain->| End-User |
+|        |                                  |     |    input     |          |
+|        |<-(3) Auth Response (code)--------|     |              |          |
+|        |                                  |     |              +----------+
+|        |--(4) Token Request-------------->|     |
+|        | (code, completion_mode=deferred) |     |
+|        |<-(5) Deferred Response-----------|     |
+|        |   (deferral_token)               |     |
+|        |                                  |     |---------+
+| Client |                                  | AS  |         |
+|        |--(6) Token Request-------------->|     |         |
+|        |   (deferral_token)               |     | (7) Complete request
+|        |<-Token Response------------------|     |         |
+|        |                                  |     |<--------+
+|        |               ...                |     |
+|        |                                  |     |
+|        |<-(8) Optional Callback-----------|     |
+|        |                                  |     |
+|        |--(6) Token Request-------------->|     |
+|        |   (deferral_token)               |     |
+|        |<-Token Response------------------|     |
+|        |                                  |     |
++--------+                                  +-----+
 ~~~
 
 For a token-endpoint-only grant the flow is the same with steps (1)
@@ -259,50 +275,59 @@ The Deferred Token Response is an opt-in mechanism from the client's
 perspective.
 An authorization server MUST NOT issue a deferred response to a client
 that has not signaled willingness to accept one.
-This specification defines the `deferrable` request parameter for that
-purpose.
+This specification defines the `completion_mode` request parameter for
+that purpose.
 
-## The `deferrable` Parameter {#the-deferrable-parameter}
+## The `completion_mode` Parameter {#the-completion-mode-parameter}
 
-`deferrable`
-: OPTIONAL. A string whose value, when present, MUST be either the
-  literal `"true"` or the literal `"false"`. No other values are
-  permitted. When `"true"`, the client signals that it is willing to
-  accept a deferred response from the authorization server in place of
-  an immediate token response or error. When `"false"`, the client
-  requires synchronous handling. If the parameter is absent, the
-  authorization server MUST treat the request as if `deferrable=false`
-  were supplied.
+`completion_mode`
+: OPTIONAL. A space-separated list of completion-mode values registered
+  in the "OAuth Completion Mode Values" registry ({{iana-considerations}}).
+  Order is not significant, and values MUST NOT be repeated. This
+  specification defines a single value, `deferred`: when it is present
+  in the list, the client signals that it is willing to accept a
+  deferred response from the authorization server in place of an
+  immediate token response or error. If the parameter is absent, or is
+  present but does not include `deferred`, the client requires
+  synchronous handling. The authorization server MUST ignore any value
+  it does not recognize.
 
-The client signals opt-in to DTR by including `deferrable=true` on
-the originating grant's token endpoint request.
+The client signals opt-in to DTR by including `deferred` among the
+`completion_mode` values on the originating grant's token endpoint
+request.
 
 For an originating grant with a preceding endpoint — the authorization
 endpoint, the device authorization endpoint of {{RFC8628}}, the
 authorization challenge endpoint, or another endpoint introduced by a
-future extension — the client MAY additionally send `deferrable=true`
-on that preceding request as an advance hint to the authorization
-server. The semantics of the hint are defined in
+future extension — the client MAY additionally send
+`completion_mode=deferred` on that preceding request as an advance hint
+to the authorization server. The semantics of the hint are defined in
 {{pre-token-hints}}.
 
 A client MAY discover authorization server support for this
 specification through the `deferred_token_response_supported`
 authorization server metadata parameter ({{iana-considerations}}). A
-client MAY send `deferrable=true` to an authorization server
+client MAY send `completion_mode=deferred` to an authorization server
 that does not advertise support; such an authorization server
-should silently ignore the parameter and complete the request synchronously
+SHOULD silently ignore the parameter and complete the request synchronously
 per its originating grant's rules.
 
 ## Pre-Token Hints {#pre-token-hints}
 
 For an originating grant with a preceding endpoint, the client MAY
-send `deferrable=true` on that preceding request to inform the
+send `completion_mode=deferred` on that preceding request to inform the
 authorization server in advance that the grant may resolve to a
 deferred response at the token endpoint. The hint is optional: a
 client that omits it on the preceding request can still opt in at the
 token endpoint, and the authorization server MUST NOT reject a token
-request carrying `deferrable=true` solely because no hint was
+request carrying `completion_mode=deferred` solely because no hint was
 received earlier.
+
+Where the authorization request is not sent directly to the
+authorization endpoint, `completion_mode` is conveyed wherever the
+request's other authorization parameters are conveyed — for example, in
+the request body of a Pushed Authorization Request (PAR) or as a member
+of a JWT-secured authorization request object (JAR).
 
 An authorization server MAY act on the hint by selecting a
 deferral-aware path for the originating grant — for example, by
@@ -313,43 +338,40 @@ that does not use the hint MUST treat the preceding request as it
 would without DTR; the hint never alters the response shape of the
 preceding endpoint.
 
-A client that has sent `deferrable=true` on the preceding request
-MUST send `deferrable=true` on the resulting token request. If the
-client instead sends `deferrable=false` (or omits the parameter) at
-the token endpoint, the authorization server MUST proceed
-synchronously per the originating grant's rules; if the authorization
-server has already committed to deferral-aware behavior on the
-strength of the hint and cannot satisfy the synchronous request, it
-MUST reject the request with the error `invalid_request`.
+A client that has sent `completion_mode=deferred` on the preceding
+request MUST also include `deferred` among the `completion_mode` values
+on the resulting token request. If the client instead omits `deferred`
+(or omits the parameter) at the token endpoint, the authorization
+server MUST reject the request with the error `invalid_request`.
 
-A client that did not send a hint MAY still send `deferrable=true` at
-the token endpoint, and the authorization server MAY return a
-deferred response.
+A client that did not send a hint MAY still send
+`completion_mode=deferred` at the token endpoint, and the authorization
+server MAY return a deferred response.
 
 Polling requests ({{token-endpoint-polling}}) are not part of the
 originating grant; they continue an already-deferred flow rather than
-initiating one and MUST NOT carry the `deferrable` parameter.
+initiating one and MUST NOT carry the `completion_mode` parameter.
 
 ## Authorization Server Discretion
 
-Sending `deferrable=true` does not entitle the client to a deferred
-response.
+Sending `completion_mode=deferred` does not entitle the client to a
+deferred response.
 The authorization server retains discretion over whether to defer any
 individual request — based on policy, risk analysis, or operational
 state — and MAY complete the request synchronously even when the client
 has opted in.
 
 Conversely, an authorization server MUST NOT defer a response to a
-request that carries `deferrable=false`. In that case the authorization
-server completes the request synchronously per the originating grant's
-rules or returns an error per those rules.
+request whose `completion_mode` does not include `deferred`. In that
+case the authorization server completes the request synchronously per
+the originating grant's rules or returns an error per those rules.
 
 Authorization servers conforming to this specification MUST accept the
-`deferrable` parameter on requests for any grant within this
-specification's scope; they MUST NOT reject `deferrable=false` as an
-unknown parameter. The opt-in semantic is preserved by the
-authorization server's choice of whether to defer, not by rejection of
-the parameter itself.
+`completion_mode` parameter on requests for any grant within this
+specification's scope; they MUST NOT reject a `completion_mode` value
+they do not recognize as an error. The opt-in semantic is preserved by
+the authorization server's choice of whether to defer, not by rejection
+of the parameter itself.
 
 ## Examples
 
@@ -364,7 +386,7 @@ Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 grant_type=authorization_code
 &code=SplxlOBeZQQYbYS6WxSbIA
 &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
-&deferrable=true
+&completion_mode=deferred
 ~~~
 
 Token endpoint request opting in to DTR (Client Credentials Grant):
@@ -377,13 +399,14 @@ Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
 grant_type=client_credentials
 &scope=profile
-&deferrable=true
+&completion_mode=deferred
 ~~~
 
 The following requests illustrate the optional pre-token hint
 ({{pre-token-hints}}) on grants with a preceding endpoint. A client
-that sends a hint is expected to follow up with `deferrable=true` on
-the corresponding token request shown above.
+that sends a hint is expected to follow up with
+`completion_mode=deferred` on the corresponding token request shown
+above.
 
 Authorization endpoint hint (Authorization Code Grant of {{OAUTH-2.1}}):
 
@@ -392,7 +415,7 @@ GET /authorize?response_type=code
   &client_id=s6BhdRkqt3
   &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
   &scope=profile
-  &deferrable=true
+  &completion_mode=deferred
   &state=af0ifjsldkj HTTP/1.1
 Host: server.example.com
 ~~~
@@ -407,7 +430,7 @@ Content-Type: application/x-www-form-urlencoded
 Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
 scope=profile
-&deferrable=true
+&completion_mode=deferred
 ~~~
 
 Authorization challenge endpoint hint ({{FIPA}}):
@@ -420,7 +443,7 @@ Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
 login_hint=%2B1-310-123-4567
 &scope=profile
-&deferrable=true
+&completion_mode=deferred
 ~~~
 
 
@@ -443,11 +466,12 @@ token endpoint request that may yield a deferred response.
 ## Pre-Token Request
 
 For grants that have a preceding endpoint, the client MAY send
-`deferrable=true` on the originating grant's request to that endpoint
-as the optional pre-token hint defined in {{pre-token-hints}}. The
-preceding endpoint behaves identically with or without `deferrable`:
-the authorization server returns the originating grant's normal
-response and does not include any DTR-specific parameter.
+`completion_mode=deferred` on the originating grant's request to that
+endpoint as the optional pre-token hint defined in {{pre-token-hints}}.
+The preceding endpoint behaves identically with or without
+`completion_mode`: the authorization server returns the originating
+grant's normal response and does not include any DTR-specific
+parameter.
 
 The following is a non-normative example of an authorization-endpoint
 hint under DTR (line wraps within values are for display only):
@@ -457,7 +481,7 @@ GET /authorize?response_type=code
   &client_id=s6BhdRkqt3
   &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
   &scope=profile
-  &deferrable=true
+  &completion_mode=deferred
   &state=af0ifjsldkj HTTP/1.1
 Host: server.example.com
 ~~~
@@ -467,11 +491,10 @@ Host: server.example.com
 The authorization server MUST validate the request as it would without
 DTR, with the following addition:
 
-- If the `deferrable` parameter is present, verify that its value is
-  the literal `"true"` or the literal `"false"`. If the value is
-  anything else, the authorization server MUST reject the request with
-  the error `invalid_request`. If the parameter is absent, the
-  authorization server processes the request as it would without DTR.
+- Apply the `completion_mode` rules of
+  {{the-completion-mode-parameter}}: process recognized values, ignore
+  unrecognized ones, and treat the request as requiring synchronous
+  handling if the parameter is absent or does not include `deferred`.
 
 If the authorization server encounters any error, it MUST return the
 originating grant's normal error response.
@@ -480,7 +503,7 @@ originating grant's normal error response.
 
 The authorization server returns the originating grant's normal
 response to a preceding-endpoint request, regardless of whether the
-request carried a `deferrable=true` hint.
+request carried a `completion_mode=deferred` hint.
 For the Authorization Code Grant of {{OAUTH-2.1}}, this is the
 authorization code response of {{Section 4.1.2 of OAUTH-2.1}}.
 
@@ -489,7 +512,7 @@ The client processes the response per the originating grant's rules.
 ## Token Endpoint — Initial Request {#token-endpoint-initial-request}
 
 The initial token request is the originating grant's token request,
-extended with the `deferrable` parameter from
+extended with the `completion_mode` parameter from
 {{client-opt-in-signaling}}.
 
 The client MAY also include the following parameter:
@@ -506,15 +529,15 @@ The client MAY also include the following parameter:
   `client_notification_token`; without one, the client cannot
   authenticate inbound callbacks (see {{callback-endpoint-validation}}).
 
-The successful response to this request is one of:
+The response to this request is one of:
 
 - The originating grant's normal token response per
   {{Section 5.1 of OAUTH-2.1}}, if the authorization server completes
   the request synchronously.
 - The deferred response defined in
   {{token-endpoint-deferred-response}}, if the authorization server
-  elects to defer the request. In this case the authorization server
-  also issues a `deferral_token` that the client uses for polling.
+  elects to defer the request. The deferred response is an error
+  response that carries a `deferral_token` the client uses for polling.
 
 The following is a non-normative example of an initial token request
 under DTR for the Authorization Code Grant:
@@ -528,7 +551,7 @@ Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 grant_type=authorization_code
 &code=SplxlOBeZQQYbYS6WxSbIA
 &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
-&deferrable=true
+&completion_mode=deferred
 &client_notification_token=f4oirNBUlM
 ~~~
 
@@ -537,16 +560,15 @@ grant_type=authorization_code
 The authorization server MUST validate the request as it would without
 DTR, with the following additions:
 
-- Apply the `deferrable` validation rules of
-  {{the-deferrable-parameter}}: if present, the value MUST be the
-  literal `"true"` or `"false"`; if absent, treat as if
-  `deferrable=false` were supplied.
+- Apply the `completion_mode` rules of
+  {{the-completion-mode-parameter}}: process recognized values and
+  ignore unrecognized ones; if the parameter is absent or does not
+  include `deferred`, treat the request as requiring synchronous
+  handling.
 - If the originating grant has a preceding endpoint and the client
-  sent `deferrable=true` on that earlier request, apply the
+  sent `completion_mode=deferred` on that earlier request, apply the
   hint-consistency rule of {{pre-token-hints}}: if the token request
-  does not also carry `deferrable=true` and the authorization server
-  has committed to deferral-aware behavior on the strength of the
-  hint such that it cannot complete the request synchronously, the
+  does not also include `deferred` in `completion_mode`, the
   authorization server MUST reject the request with the error
   `invalid_request`.
 - If `client_notification_token` is present, verify that the value
@@ -559,20 +581,14 @@ originating grant's rules, as appropriate.
 
 ## Token Endpoint — Deferred Response {#token-endpoint-deferred-response}
 
-When the authorization server elects to defer a token request that
-carries `deferrable=true`, it returns a 200 OK response on the token
-endpoint with a body that conforms to the OAuth 2.1 token response
-({{Section 5.1 of OAUTH-2.1}}) and reuses its parameter structure as
-follows.
-
-The `access_token` parameter carries a deferral token rather than an
-access token. This follows the precedent set by Token Exchange
-({{Section 2.2.1 of RFC8693}}), which states that "the identifier
-`access_token` is used for historical reasons and the issued token
-need not be an OAuth access token." The `issued_token_type` parameter
-({{Section 2.2.1 of RFC8693}}) identifies the value carried in
-`access_token`; for a deferred response, its value is the URI
-`urn:ietf:params:oauth:token-type:deferral-token`.
+When the authorization server elects to defer a token request whose
+`completion_mode` includes `deferred`, it returns an error response on
+the token endpoint per {{Section 5.2 of OAUTH-2.1}} with the HTTP
+status code 400 (Bad Request) and the error code `authorization_pending`.
+The deferred response is not a token response: it issues no access
+token and confers no access to any protected resource. Instead it
+carries a `deferral_token` that the client uses to retrieve the
+eventual token response once the deferred request resolves.
 
 A deferral token is a sender-constrained, AS-issued credential that
 represents a single pending authorization request. It is not an OAuth
@@ -583,9 +599,10 @@ authorization server's token endpoint, by which the client retrieves
 the eventual token response when the deferred request resolves. See
 {{token-endpoint-polling}}.
 
-The response includes the following parameters:
+In addition to the `error` parameter, the deferred response includes
+the following parameters:
 
-`access_token`
+`deferral_token`
 : REQUIRED. The deferral token issued by the authorization server.
 The deferral token MUST contain at least 128 bits of entropy
 (160 bits RECOMMENDED) drawn from a cryptographically secure
@@ -598,29 +615,13 @@ The client uses this value when polling the token endpoint per
 authorization server includes the same value when it notifies the
 client.
 
-`issued_token_type`
-: REQUIRED. The URI
-`urn:ietf:params:oauth:token-type:deferral-token`, indicating that
-the value in `access_token` is a deferral token and not an access
-token. Clients MUST inspect `issued_token_type` before interpreting
-any other field in the response; the presence of this URI changes
-the meaning of `expires_in` and the absence of access-token-bearing
-fields.
-
-`token_type`
-: REQUIRED. The value `N_A`, indicating that the issued token is not
-an access token type, per the convention established by
-{{Section 2.2.1 of RFC8693}}.
-
 `expires_in`
 : REQUIRED. The lifetime in seconds of the deferral token. After this
 interval, the authorization server MUST reject polling requests
 that present this deferral token with the error `expired_token`.
-When `issued_token_type` is
-`urn:ietf:params:oauth:token-type:deferral-token`, `expires_in`
-governs the lifetime of the deferral token, not the lifetime of any
-eventual access token; clients MUST NOT use this value to schedule
-access-token refresh.
+This value governs the lifetime of the deferral token, not the
+lifetime of any eventual access token; clients MUST NOT use this
+value to schedule access-token refresh.
 
 `interval`
 : REQUIRED. The minimum number of seconds the client MUST wait
@@ -631,18 +632,21 @@ with `authorization_pending` do not repeat it, and the client MUST
 retain the value from the deferred response for the lifetime of the
 deferral token.
 
+`error_description`
+: OPTIONAL. Human-readable text as defined in
+{{Section 5.2 of OAUTH-2.1}}, subject to the data-minimization rules
+of {{progress-information-in-errors}}.
+
 Example:
 
 ~~~
-HTTP/1.1 200 OK
+HTTP/1.1 400 Bad Request
 Content-Type: application/json
 Cache-Control: no-store
 
 {
-  "access_token": "8d67dc78-7faa-4d41-aabd-67707b374255",
-  "issued_token_type":
-    "urn:ietf:params:oauth:token-type:deferral-token",
-  "token_type": "N_A",
+  "error": "authorization_pending",
+  "deferral_token": "8d67dc78-7faa-4d41-aabd-67707b374255",
   "expires_in": 10800,
   "interval": 60
 }
@@ -724,9 +728,16 @@ error response per {{token-endpoint-error-responses}}.
 When the deferred request has resolved successfully, the authorization
 server returns the originating grant's successful token response per
 {{Section 5.1 of OAUTH-2.1}}.
-The response includes an `access_token`, a `token_type` other than
-`N_A`, and any other fields the originating grant defines (such as
-`refresh_token` or `scope`).
+The response includes an `access_token`, a `token_type`, and any other
+fields the originating grant defines (such as `refresh_token` or
+`scope`).
+
+When the originating grant defines an `issued_token_type` in its
+successful token response (as Token Exchange does, per
+{{Section 2.2.1 of RFC8693}}), the successful polling response carries
+that originating-grant `issued_token_type` value. The successful polling
+response is never a deferred response and MUST NOT carry the
+`urn:ietf:params:oauth:token-type:deferral-token` type.
 
 The `expires_in` field of this response carries the access-token
 lifetime per {{Section 5.1 of OAUTH-2.1}}; it is not the
@@ -760,13 +771,26 @@ request of {{token-endpoint-initial-request}} or the polling request of
 authorization server returns an error response per
 {{Section 5.2 of OAUTH-2.1}}.
 
+The authorization server MUST include the `Cache-Control: no-store`
+header field from {{Section 5.2.2.3 of RFC7234}} in every error response
+defined in this section, including the deferred response of
+{{token-endpoint-deferred-response}} and any `authorization_pending` or
+`slow_down` response. This prevents an intermediary or the client from
+caching a transient `authorization_pending` response and replaying it,
+which could otherwise cause the client to poll indefinitely.
+
 In addition to the error codes defined in {{Section 5.2 of OAUTH-2.1}},
 this specification uses the following error codes, with semantics
 aligned with the corresponding codes in {{Section 3.5 of RFC8628}}:
 
 `authorization_pending`
-: The deferred request has not yet resolved. The client SHOULD continue
-  polling at the rate established by `interval`.
+: The request has not yet resolved. On the initial token request, this
+  is the deferred response of {{token-endpoint-deferred-response}}, which
+  establishes the `deferral_token` and carries `expires_in` and
+  `interval`. On a subsequent polling request, it indicates the deferred
+  request is still pending; such responses reference the established
+  `deferral_token` and do not repeat it. In either case the client
+  SHOULD continue polling at the rate established by `interval`.
 
 `slow_down`
 : The client is polling faster than `interval` allows. The client MUST
@@ -795,10 +819,9 @@ The following additional rules apply:
   responses as terminal and MUST NOT retry with the same
   `deferral_token`.
 
-- A token request that contradicts a `deferrable=true` hint sent on
-  the originating grant's preceding-endpoint request, where the
-  authorization server has already committed to deferral-aware
-  behavior on the strength of that hint, MUST result in an
+- A token request that omits `deferred` from `completion_mode` after
+  a `completion_mode=deferred` hint was sent on the originating
+  grant's preceding-endpoint request MUST result in an
   `invalid_request` error per {{pre-token-hints}}.
 
 - If a client polls faster than `interval` repeatedly, the authorization
@@ -927,7 +950,7 @@ The client makes an HTTP POST request to the revocation endpoint per
 
 `token`
 : REQUIRED. The deferral token to cancel, exactly as received in the
-  `access_token` field of the deferred response.
+  `deferral_token` field of the deferred response.
 
 `token_type_hint`
 : RECOMMENDED. Value
@@ -1039,6 +1062,32 @@ This specification does not define a way to deliver the final token
 response directly via the callback. Long-running, high-value flows
 warrant the durability of polling: a single lost push request would
 otherwise lose the outcome of the entire deferred request.
+
+## Obtaining an Immediate Result Alongside a Deferred Request
+
+A deferred request may take an arbitrarily long time to resolve. A client
+that also requires an immediate result — for example, a basic access token
+or an ID token to render initial user experience — can obtain one by
+starting a separate, non-deferred grant in parallel, while it continues to
+poll the deferred request for the final result.
+
+How the client obtains the immediate result depends on the originating
+grant:
+
+- For the Authorization Code Grant, the client can perform a parallel
+  OpenID Connect authentication with `prompt=none` to obtain an ID token
+  (and, where applicable, an access token) without further user
+  interaction.
+- For the Client Credentials Grant or {{ID-JAG}}, the client can send an
+  additional token request that omits the `completion_mode` parameter
+  entirely, which the authorization server completes synchronously per the
+  originating grant's rules.
+
+The immediate result and the deferred result are independent: the immediate
+result reflects what the authorization server can issue synchronously, while
+the deferred request continues toward the final, possibly higher-assurance,
+token response. This lets a client proceed with available work immediately
+rather than blocking on the deferred outcome.
 
 ## Progress Information in Errors {#progress-information-in-errors}
 
@@ -1268,8 +1317,8 @@ respect to log redaction, transport security, and at-rest storage.
 Standard web-server access logs that capture POST bodies retain
 deferral token values for the entire log retention window;
 implementations SHOULD configure their logging stacks to redact the
-`deferral_token` request parameter and the `access_token` response
-field of deferred responses (the latter carries the same value per
+`deferral_token` parameter wherever it appears — both as the polling
+request parameter and as the response field of deferred responses (see
 {{token-endpoint-deferred-response}}).
 
 # Privacy Considerations
@@ -1309,8 +1358,36 @@ Final values for `Reference` are this RFC once published.
 This specification requests registration of the following parameter in
 the IANA "OAuth Parameters" registry:
 
-- Parameter name: `deferrable`
+- Parameter name: `completion_mode`
 - Parameter usage location: authorization request, token request
+- Change Controller: IETF
+- Specification Document(s): this specification
+
+The value of `completion_mode` is a space-separated list of values
+registered in the "OAuth Completion Mode Values" registry defined below.
+
+## OAuth Completion Mode Values Registry
+
+This specification requests the creation of a new IANA registry titled
+"OAuth Completion Mode Values" to hold the values that may appear in the
+space-separated `completion_mode` request parameter.
+
+The registry follows the "Specification Required" registration policy
+{{RFC8126}}. Each registration comprises:
+
+- Value: the completion-mode value (a single token containing no spaces).
+- Description: a brief description of the value's meaning.
+- Change Controller: for values registered by the IETF, "IETF";
+  otherwise the registering party.
+- Specification Document(s): a reference to the document defining the
+  value.
+
+This specification registers the following initial value:
+
+- Value: `deferred`
+- Description: The client accepts a deferred response
+  ({{token-endpoint-deferred-response}}) in place of an immediate token
+  response or error.
 - Change Controller: IETF
 - Specification Document(s): this specification
 
@@ -1394,7 +1471,8 @@ application during that time.
 
 When the user initiates the transaction, the banking application
 sends an authorization request to the bank's authorization server with
-`deferrable=true`. The authorization server's risk-analysis system
+`completion_mode=deferred`. The authorization server's risk-analysis
+system
 flags the transaction for additional review. The authorization
 server returns a deferred response carrying a deferral token.
 
@@ -1417,8 +1495,9 @@ needs to step up the user's assurance before issuing the token; the
 step-up may involve biometric verification or document presentation
 that is not guaranteed to complete instantly.
 
-The client sends an authorization request with `deferrable=true`. The
-authorization server determines that the requested operation
+The client sends an authorization request with
+`completion_mode=deferred`. The authorization server determines that
+the requested operation
 requires step-up, collects the relevant information from the user,
 returns a deferred response, and proceeds with the
 verification asynchronously. The client renders any unblocked steps
@@ -1441,7 +1520,7 @@ verification often makes the human-in-the-loop case mandatory rather
 than optional.
 
 The client sends the originating grant's token request with
-`deferrable=true`. When automated verification suffices, the
+`completion_mode=deferred`. When automated verification suffices, the
 authorization server completes synchronously. When it does not, the
 authorization server returns a deferred response, queues the
 evidence for human review, and notifies the client when the review
@@ -1459,7 +1538,8 @@ for example, executing a purchase above the per-transaction ceiling
 the principal granted.
 
 The agent sends a token request to the authorization server with
-`deferrable=true`. The authorization server, recognizing that the
+`completion_mode=deferred`. The authorization server, recognizing that
+the
 requested scope exceeds standing approval, contacts the human
 principal out of band — by mobile push, email, or a separate
 approval application — and returns a deferred response to the agent.
@@ -1482,7 +1562,7 @@ The workflow may involve approvals from the requestor's manager, the
 resource owner, and a security reviewer, and may take from several
 hours to several business days.
 
-The client sends a token request with `deferrable=true`. The
+The client sends a token request with `completion_mode=deferred`. The
 authorization server, recognizing that the requested scope is under
 IGA control, opens a request in the governance system, returns a
 deferred response, and notifies the relevant approvers through their
