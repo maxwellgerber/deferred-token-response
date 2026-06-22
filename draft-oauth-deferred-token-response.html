@@ -12,7 +12,9 @@
        This document defines the Deferred Token Response (DTR) extension
 for OAuth 2.1. In existing OAuth grants, the token endpoint either
 issues an access token or returns an error.
-DTR introduces a third outcome: the authorization server returns a
+DTR establishes a generic asynchronous token request mechanism that any
+OAuth grant may plug into.
+In DTR-aware flows, the authorization server returns a
  deferral_token  and a polling interval, indicating that the final
 token response will be available at a later time.
 The client retrieves the eventual response by polling the token
@@ -1060,7 +1062,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Jacobsen, et al.</td>
-<td class="center">Expires 21 December 2026</td>
+<td class="center">Expires 24 December 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1073,12 +1075,12 @@ svg {
 <dd class="internet-draft">draft-oauth-deferred-token-response-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-06-19" class="published">19 June 2026</time>
+<time datetime="2026-06-22" class="published">22 June 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-12-21">21 December 2026</time></dd>
+<dd class="expires"><time datetime="2026-12-24">24 December 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1102,7 +1104,9 @@ svg {
 <p id="section-abstract-1">This document defines the Deferred Token Response (DTR) extension
 for OAuth 2.1. In existing OAuth grants, the token endpoint either
 issues an access token or returns an error.
-DTR introduces a third outcome: the authorization server returns a
+DTR establishes a generic asynchronous token request mechanism that any
+OAuth grant may plug into.
+In DTR-aware flows, the authorization server returns a
 <code>deferral_token</code> and a polling interval, indicating that the final
 token response will be available at a later time.
 The client retrieves the eventual response by polling the token
@@ -1139,7 +1143,7 @@ when one is configured.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 21 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 24 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1181,7 +1185,7 @@ when one is configured.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
             <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-client-opt-in-signaling" class="internal xref">Client Opt-In Signaling</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
-                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-the-deferrable-parameter" class="internal xref">The <code>deferrable</code> Parameter</a></p>
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-the-completion_mode-paramet" class="internal xref">The <code>completion_mode</code> Parameter</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
                 <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="auto internal xref">4.2</a>.  <a href="#name-pre-token-hints" class="internal xref">Pre-Token Hints</a></p>
@@ -1270,7 +1274,10 @@ when one is configured.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
                 <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="auto internal xref">8.1</a>.  <a href="#name-polling-and-callback-togeth" class="internal xref">Polling and Callback Together</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
-                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="auto internal xref">8.2</a>.  <a href="#name-progress-information-in-err" class="internal xref">Progress Information in Errors</a></p>
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="auto internal xref">8.2</a>.  <a href="#name-obtaining-an-immediate-resu" class="internal xref">Obtaining an Immediate Result Alongside a Deferred Request</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3">
+                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="auto internal xref">8.3</a>.  <a href="#name-progress-information-in-err" class="internal xref">Progress Information in Errors</a></p>
 </li>
             </ul>
 </li>
@@ -1329,16 +1336,19 @@ when one is configured.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
                 <p id="section-toc.1-1.12.2.1.1"><a href="#section-12.1" class="auto internal xref">12.1</a>.  <a href="#name-oauth-parameters-registrati" class="internal xref">OAuth Parameters Registration</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.2">
-                <p id="section-toc.1-1.12.2.2.1"><a href="#section-12.2" class="auto internal xref">12.2</a>.  <a href="#name-oauth-dynamic-client-regist" class="internal xref">OAuth Dynamic Client Registration Metadata Registration</a></p>
+                <p id="section-toc.1-1.12.2.2.1"><a href="#section-12.2" class="auto internal xref">12.2</a>.  <a href="#name-oauth-completion-mode-value" class="internal xref">OAuth Completion Mode Values Registry</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.3">
-                <p id="section-toc.1-1.12.2.3.1"><a href="#section-12.3" class="auto internal xref">12.3</a>.  <a href="#name-oauth-grant-type-registry" class="internal xref">OAuth Grant Type Registry</a></p>
+                <p id="section-toc.1-1.12.2.3.1"><a href="#section-12.3" class="auto internal xref">12.3</a>.  <a href="#name-oauth-dynamic-client-regist" class="internal xref">OAuth Dynamic Client Registration Metadata Registration</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.4">
-                <p id="section-toc.1-1.12.2.4.1"><a href="#section-12.4" class="auto internal xref">12.4</a>.  <a href="#name-oauth-authorization-server-" class="internal xref">OAuth Authorization Server Metadata Registry</a></p>
+                <p id="section-toc.1-1.12.2.4.1"><a href="#section-12.4" class="auto internal xref">12.4</a>.  <a href="#name-oauth-grant-type-registry" class="internal xref">OAuth Grant Type Registry</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.5">
-                <p id="section-toc.1-1.12.2.5.1"><a href="#section-12.5" class="auto internal xref">12.5</a>.  <a href="#name-oauth-uri-registration" class="internal xref">OAuth URI Registration</a></p>
+                <p id="section-toc.1-1.12.2.5.1"><a href="#section-12.5" class="auto internal xref">12.5</a>.  <a href="#name-oauth-authorization-server-" class="internal xref">OAuth Authorization Server Metadata Registry</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.6">
+                <p id="section-toc.1-1.12.2.6.1"><a href="#section-12.6" class="auto internal xref">12.6</a>.  <a href="#name-oauth-uri-registration" class="internal xref">OAuth URI Registration</a></p>
 </li>
             </ul>
 </li>
@@ -1456,9 +1466,9 @@ appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶<
         <dd style="margin-left: 1.5em" id="section-2-3.2">
           <p id="section-2-3.2.1">A unique, opaque, server-generated identifier that represents a
 single pending token request. The deferral token is carried
-in the <code>access_token</code> parameter of the deferred token response per
-the historical-name convention of <span><a href="https://rfc-editor.org/rfc/rfc8693#section-2.2.1" class="relref">Section 2.2.1</a> of [<a href="#RFC8693" class="cite xref">RFC8693</a>]</span>, and
-is identified by the <code>issued_token_type</code> URI
+in the <code>deferral_token</code> member of the deferred response
+(<a href="#token-endpoint-deferred-response" class="auto internal xref">Section 5.4</a>) and is identified, when
+used as a <code>token_type_hint</code> at the revocation endpoint, by the URI
 <code>urn:ietf:params:oauth:token-type:deferral-token</code>. The deferral
 token is bound to the issuing client and to a sender-constraining
 key per <a href="#sender-constraint-requirements" class="auto internal xref">Section 10.1</a>, and entitles the bound
@@ -1488,6 +1498,19 @@ on whose token request the deferred response was returned, and
 whose successful token response shape is reused when the deferred
 request eventually resolves.<a href="#section-2-3.8.1" class="pilcrow">¶</a></p>
 </dd>
+        <dd class="break"></dd>
+<dt id="section-2-3.9">preceding endpoint</dt>
+        <dd style="margin-left: 1.5em" id="section-2-3.10">
+          <p id="section-2-3.10.1">Some grant types utilize multiple authorization server endpoints.
+For an originating grant whose flow begins at an endpoint other
+than the token endpoint, the preceding endpoint is the endpoint
+utilized just before the token endpoint. Examples include the
+authorization endpoint of the Authorization Code Grant (<span>[<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>),
+the device authorization endpoint of <span>[<a href="#RFC8628" class="cite xref">RFC8628</a>]</span>, and the authorization
+challenge endpoint of <span>[<a href="#FIPA" class="cite xref">FIPA</a>]</span>. A grant that operates entirely at
+the token endpoint (for example, the Client Credentials Grant)
+has no preceding endpoint.<a href="#section-2-3.10.1" class="pilcrow">¶</a></p>
+</dd>
       <dd class="break"></dd>
 </dl>
 </section>
@@ -1505,8 +1528,8 @@ endpoints. A grant becomes deferred when:<a href="#section-3-2" class="pilcrow">
 <ol start="1" type="1" class="normal type-1" id="section-3-3">
 <li id="section-3-3.1">
           <p id="section-3-3.1.1">The client signals willingness to accept a deferred response by
-including <code>deferrable=true</code> on the originating grant's token
-endpoint request.<a href="#section-3-3.1.1" class="pilcrow">¶</a></p>
+including <code>deferred</code> among the values of the <code>completion_mode</code>
+parameter on the originating grant's token endpoint request.<a href="#section-3-3.1.1" class="pilcrow">¶</a></p>
 </li>
         <li id="section-3-3.2">
           <p id="section-3-3.2.1">The authorization server elects, on that token endpoint request,
@@ -1525,7 +1548,8 @@ resolves.<a href="#section-3-3.3.1" class="pilcrow">¶</a></p>
 authorization endpoint of the Authorization Code Grant of
 <span>[<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>, the device authorization endpoint of <span>[<a href="#RFC8628" class="cite xref">RFC8628</a>]</span>, or
 the authorization challenge endpoint of <span>[<a href="#FIPA" class="cite xref">FIPA</a>]</span> — the client <span class="bcp14">MAY</span> also
-send <code>deferrable=true</code> on the preceding request as an advance hint.
+send <code>completion_mode=deferred</code> on the preceding request as an advance
+hint.
 The hint allows the authorization server to commit to deferral-aware
 behavior before the token request — for example, by collecting different
 consent, by showing a different verification UX, or by selecting a different
@@ -1538,33 +1562,33 @@ authorization <code>code</code>) regardless of whether the request will be
 deferred.<a href="#section-3-4" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3-5">
 <pre>
-+--------+                            +-----+              +----------+
-|        |                            |     |              |          |
-|        |--(1) Auth Request---------&gt;|     |              |          |
-|        |   (deferrable=true)        |     |              |          |
-|        |                            |     |&lt;-(2) Obtain-&gt;| End-User |
-|        |                            |     |    input     |          |
-|        |&lt;-(3) Auth Response (code)--|     |              |          |
-|        |                            |     |              +----------+
-|        |--(4) Token Request--------&gt;|     |
-|        |   (code, deferrable=true)  |     |
-|        |&lt;-(5) Deferred Response-----|     |
-|        |   (deferral_token)         |     |
-|        |                            |     |---------+
-| Client |                            | AS  |         |
-|        |--(6) Token Request--------&gt;|     |         |
-|        |   (deferral_token)         |     | (7) Complete request
-|        |&lt;-Token Response------------|     |         |
-|        |                            |     |&lt;--------+
-|        |               ...          |     |
-|        |                            |     |
-|        |&lt;-(8) Optional Callback-----|     |
-|        |                            |     |
-|        |--(6) Token Request--------&gt;|     |
-|        |   (deferral_token)         |     |
-|        |&lt;-Token Response------------|     |
-|        |                            |     |
-+--------+                            +-----+
++--------+                                  +-----+              +----------+
+|        |                                  |     |              |          |
+|        |--(1) Auth Request---------------&gt;|     |              |          |
+|        |   (completion_mode=deferred)     |     |              |          |
+|        |                                  |     |&lt;-(2) Obtain-&gt;| End-User |
+|        |                                  |     |    input     |          |
+|        |&lt;-(3) Auth Response (code)--------|     |              |          |
+|        |                                  |     |              +----------+
+|        |--(4) Token Request--------------&gt;|     |
+|        | (code, completion_mode=deferred) |     |
+|        |&lt;-(5) Deferred Response-----------|     |
+|        |   (deferral_token)               |     |
+|        |                                  |     |---------+
+| Client |                                  | AS  |         |
+|        |--(6) Token Request--------------&gt;|     |         |
+|        |   (deferral_token)               |     | (7) Complete request
+|        |&lt;-Token Response------------------|     |         |
+|        |                                  |     |&lt;--------+
+|        |               ...                |     |
+|        |                                  |     |
+|        |&lt;-(8) Optional Callback-----------|     |
+|        |                                  |     |
+|        |--(6) Token Request--------------&gt;|     |
+|        |   (deferral_token)               |     |
+|        |&lt;-Token Response------------------|     |
+|        |                                  |     |
++--------+                                  +-----+
 </pre><a href="#section-3-5" class="pilcrow">¶</a>
 </div>
 <p id="section-3-6">For a token-endpoint-only grant the flow is the same with steps (1)
@@ -1583,42 +1607,45 @@ cancellation — is identical regardless of the originating grant.<a href="#sect
 perspective.
 An authorization server <span class="bcp14">MUST NOT</span> issue a deferred response to a client
 that has not signaled willingness to accept one.
-This specification defines the <code>deferrable</code> request parameter for that
-purpose.<a href="#section-4-1" class="pilcrow">¶</a></p>
-<div id="the-deferrable-parameter">
+This specification defines the <code>completion_mode</code> request parameter for
+that purpose.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<div id="the-completion-mode-parameter">
 <section id="section-4.1">
-        <h3 id="name-the-deferrable-parameter">
-<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-the-deferrable-parameter" class="section-name selfRef">The <code>deferrable</code> Parameter</a>
+        <h3 id="name-the-completion_mode-paramet">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-the-completion_mode-paramet" class="section-name selfRef">The <code>completion_mode</code> Parameter</a>
         </h3>
 <span class="break"></span><dl class="dlParallel" id="section-4.1-1">
-          <dt id="section-4.1-1.1"><code>deferrable</code></dt>
+          <dt id="section-4.1-1.1"><code>completion_mode</code></dt>
           <dd style="margin-left: 1.5em" id="section-4.1-1.2">
-            <p id="section-4.1-1.2.1"><span class="bcp14">OPTIONAL</span>. A string whose value, when present, <span class="bcp14">MUST</span> be either the
-literal <code>"true"</code> or the literal <code>"false"</code>. No other values are
-permitted. When <code>"true"</code>, the client signals that it is willing to
-accept a deferred response from the authorization server in place of
-an immediate token response or error. When <code>"false"</code>, the client
-requires synchronous handling. If the parameter is absent, the
-authorization server <span class="bcp14">MUST</span> treat the request as if <code>deferrable=false</code>
-were supplied.<a href="#section-4.1-1.2.1" class="pilcrow">¶</a></p>
+            <p id="section-4.1-1.2.1"><span class="bcp14">OPTIONAL</span>. A space-separated list of completion-mode values registered
+in the "OAuth Completion Mode Values" registry (<a href="#iana-considerations" class="auto internal xref">Section 12</a>).
+Order is not significant, and values <span class="bcp14">MUST NOT</span> be repeated. This
+specification defines a single value, <code>deferred</code>: when it is present
+in the list, the client signals that it is willing to accept a
+deferred response from the authorization server in place of an
+immediate token response or error. If the parameter is absent, or is
+present but does not include <code>deferred</code>, the client requires
+synchronous handling. The authorization server <span class="bcp14">MUST</span> ignore any value
+it does not recognize.<a href="#section-4.1-1.2.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
-<p id="section-4.1-2">The client signals opt-in to DTR by including <code>deferrable=true</code> on
-the originating grant's token endpoint request.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+<p id="section-4.1-2">The client signals opt-in to DTR by including <code>deferred</code> among the
+<code>completion_mode</code> values on the originating grant's token endpoint
+request.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
 <p id="section-4.1-3">For an originating grant with a preceding endpoint — the authorization
 endpoint, the device authorization endpoint of <span>[<a href="#RFC8628" class="cite xref">RFC8628</a>]</span>, the
 authorization challenge endpoint, or another endpoint introduced by a
-future extension — the client <span class="bcp14">MAY</span> additionally send <code>deferrable=true</code>
-on that preceding request as an advance hint to the authorization
-server. The semantics of the hint are defined in
+future extension — the client <span class="bcp14">MAY</span> additionally send
+<code>completion_mode=deferred</code> on that preceding request as an advance hint
+to the authorization server. The semantics of the hint are defined in
 <a href="#pre-token-hints" class="auto internal xref">Section 4.2</a>.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
 <p id="section-4.1-4">A client <span class="bcp14">MAY</span> discover authorization server support for this
 specification through the <code>deferred_token_response_supported</code>
 authorization server metadata parameter (<a href="#iana-considerations" class="auto internal xref">Section 12</a>). A
-client <span class="bcp14">MAY</span> send <code>deferrable=true</code> to an authorization server
+client <span class="bcp14">MAY</span> send <code>completion_mode=deferred</code> to an authorization server
 that does not advertise support; such an authorization server
-should silently ignore the parameter and complete the request synchronously
+<span class="bcp14">SHOULD</span> silently ignore the parameter and complete the request synchronously
 per its originating grant's rules.<a href="#section-4.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -1628,35 +1655,37 @@ per its originating grant's rules.<a href="#section-4.1-4" class="pilcrow">¶</a
 <a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-pre-token-hints" class="section-name selfRef">Pre-Token Hints</a>
         </h3>
 <p id="section-4.2-1">For an originating grant with a preceding endpoint, the client <span class="bcp14">MAY</span>
-send <code>deferrable=true</code> on that preceding request to inform the
+send <code>completion_mode=deferred</code> on that preceding request to inform the
 authorization server in advance that the grant may resolve to a
 deferred response at the token endpoint. The hint is optional: a
 client that omits it on the preceding request can still opt in at the
 token endpoint, and the authorization server <span class="bcp14">MUST NOT</span> reject a token
-request carrying <code>deferrable=true</code> solely because no hint was
+request carrying <code>completion_mode=deferred</code> solely because no hint was
 received earlier.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
-<p id="section-4.2-2">An authorization server <span class="bcp14">MAY</span> act on the hint by selecting a
+<p id="section-4.2-2">Where the authorization request is not sent directly to the
+authorization endpoint, <code>completion_mode</code> is conveyed wherever the
+request's other authorization parameters are conveyed — for example, in
+the request body of a Pushed Authorization Request (PAR) or as a member
+of a JWT-secured authorization request object (JAR).<a href="#section-4.2-2" class="pilcrow">¶</a></p>
+<p id="section-4.2-3">An authorization server <span class="bcp14">MAY</span> act on the hint by selecting a
 deferral-aware path for the originating grant — for example, by
 collecting different consent from the resource owner, by presenting a
 different verification UX, by routing the request to a review queue,
 or by altering its risk-analysis decision. An authorization server
 that does not use the hint <span class="bcp14">MUST</span> treat the preceding request as it
 would without DTR; the hint never alters the response shape of the
-preceding endpoint.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
-<p id="section-4.2-3">A client that has sent <code>deferrable=true</code> on the preceding request
-<span class="bcp14">MUST</span> send <code>deferrable=true</code> on the resulting token request. If the
-client instead sends <code>deferrable=false</code> (or omits the parameter) at
-the token endpoint, the authorization server <span class="bcp14">MUST</span> proceed
-synchronously per the originating grant's rules; if the authorization
-server has already committed to deferral-aware behavior on the
-strength of the hint and cannot satisfy the synchronous request, it
-<span class="bcp14">MUST</span> reject the request with the error <code>invalid_request</code>.<a href="#section-4.2-3" class="pilcrow">¶</a></p>
-<p id="section-4.2-4">A client that did not send a hint <span class="bcp14">MAY</span> still send <code>deferrable=true</code> at
-the token endpoint, and the authorization server <span class="bcp14">MAY</span> return a
-deferred response.<a href="#section-4.2-4" class="pilcrow">¶</a></p>
-<p id="section-4.2-5">Polling requests (<a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>) are not part of the
+preceding endpoint.<a href="#section-4.2-3" class="pilcrow">¶</a></p>
+<p id="section-4.2-4">A client that has sent <code>completion_mode=deferred</code> on the preceding
+request <span class="bcp14">MUST</span> also include <code>deferred</code> among the <code>completion_mode</code> values
+on the resulting token request. If the client instead omits <code>deferred</code>
+(or omits the parameter) at the token endpoint, the authorization
+server <span class="bcp14">MUST</span> reject the request with the error <code>invalid_request</code>.<a href="#section-4.2-4" class="pilcrow">¶</a></p>
+<p id="section-4.2-5">A client that did not send a hint <span class="bcp14">MAY</span> still send
+<code>completion_mode=deferred</code> at the token endpoint, and the authorization
+server <span class="bcp14">MAY</span> return a deferred response.<a href="#section-4.2-5" class="pilcrow">¶</a></p>
+<p id="section-4.2-6">Polling requests (<a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>) are not part of the
 originating grant; they continue an already-deferred flow rather than
-initiating one and <span class="bcp14">MUST NOT</span> carry the <code>deferrable</code> parameter.<a href="#section-4.2-5" class="pilcrow">¶</a></p>
+initiating one and <span class="bcp14">MUST NOT</span> carry the <code>completion_mode</code> parameter.<a href="#section-4.2-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="authorization-server-discretion">
@@ -1664,22 +1693,22 @@ initiating one and <span class="bcp14">MUST NOT</span> carry the <code>deferrabl
         <h3 id="name-authorization-server-discre">
 <a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-authorization-server-discre" class="section-name selfRef">Authorization Server Discretion</a>
         </h3>
-<p id="section-4.3-1">Sending <code>deferrable=true</code> does not entitle the client to a deferred
-response.
+<p id="section-4.3-1">Sending <code>completion_mode=deferred</code> does not entitle the client to a
+deferred response.
 The authorization server retains discretion over whether to defer any
 individual request — based on policy, risk analysis, or operational
 state — and <span class="bcp14">MAY</span> complete the request synchronously even when the client
 has opted in.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
 <p id="section-4.3-2">Conversely, an authorization server <span class="bcp14">MUST NOT</span> defer a response to a
-request that carries <code>deferrable=false</code>. In that case the authorization
-server completes the request synchronously per the originating grant's
-rules or returns an error per those rules.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
+request whose <code>completion_mode</code> does not include <code>deferred</code>. In that
+case the authorization server completes the request synchronously per
+the originating grant's rules or returns an error per those rules.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
 <p id="section-4.3-3">Authorization servers conforming to this specification <span class="bcp14">MUST</span> accept the
-<code>deferrable</code> parameter on requests for any grant within this
-specification's scope; they <span class="bcp14">MUST NOT</span> reject <code>deferrable=false</code> as an
-unknown parameter. The opt-in semantic is preserved by the
-authorization server's choice of whether to defer, not by rejection of
-the parameter itself.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
+<code>completion_mode</code> parameter on requests for any grant within this
+specification's scope; they <span class="bcp14">MUST NOT</span> reject a <code>completion_mode</code> value
+they do not recognize as an error. The opt-in semantic is preserved by
+the authorization server's choice of whether to defer, not by rejection
+of the parameter itself.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="examples">
@@ -1698,7 +1727,7 @@ Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 grant_type=authorization_code
 &amp;code=SplxlOBeZQQYbYS6WxSbIA
 &amp;redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
-&amp;deferrable=true
+&amp;completion_mode=deferred
 </pre><a href="#section-4.4-2" class="pilcrow">¶</a>
 </div>
 <p id="section-4.4-3">Token endpoint request opting in to DTR (Client Credentials Grant):<a href="#section-4.4-3" class="pilcrow">¶</a></p>
@@ -1711,13 +1740,14 @@ Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
 grant_type=client_credentials
 &amp;scope=profile
-&amp;deferrable=true
+&amp;completion_mode=deferred
 </pre><a href="#section-4.4-4" class="pilcrow">¶</a>
 </div>
 <p id="section-4.4-5">The following requests illustrate the optional pre-token hint
 (<a href="#pre-token-hints" class="auto internal xref">Section 4.2</a>) on grants with a preceding endpoint. A client
-that sends a hint is expected to follow up with <code>deferrable=true</code> on
-the corresponding token request shown above.<a href="#section-4.4-5" class="pilcrow">¶</a></p>
+that sends a hint is expected to follow up with
+<code>completion_mode=deferred</code> on the corresponding token request shown
+above.<a href="#section-4.4-5" class="pilcrow">¶</a></p>
 <p id="section-4.4-6">Authorization endpoint hint (Authorization Code Grant of <span>[<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>):<a href="#section-4.4-6" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-4.4-7">
 <pre>
@@ -1725,7 +1755,7 @@ GET /authorize?response_type=code
   &amp;client_id=s6BhdRkqt3
   &amp;redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
   &amp;scope=profile
-  &amp;deferrable=true
+  &amp;completion_mode=deferred
   &amp;state=af0ifjsldkj HTTP/1.1
 Host: server.example.com
 </pre><a href="#section-4.4-7" class="pilcrow">¶</a>
@@ -1740,7 +1770,7 @@ Content-Type: application/x-www-form-urlencoded
 Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
 scope=profile
-&amp;deferrable=true
+&amp;completion_mode=deferred
 </pre><a href="#section-4.4-9" class="pilcrow">¶</a>
 </div>
 <p id="section-4.4-10">Authorization challenge endpoint hint (<span>[<a href="#FIPA" class="cite xref">FIPA</a>]</span>):<a href="#section-4.4-10" class="pilcrow">¶</a></p>
@@ -1753,7 +1783,7 @@ Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
 login_hint=%2B1-310-123-4567
 &amp;scope=profile
-&amp;deferrable=true
+&amp;completion_mode=deferred
 </pre><a href="#section-4.4-11" class="pilcrow">¶</a>
 </div>
 </section>
@@ -1783,11 +1813,12 @@ token endpoint request that may yield a deferred response.<a href="#section-5-2"
 <a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-pre-token-request" class="section-name selfRef">Pre-Token Request</a>
         </h3>
 <p id="section-5.1-1">For grants that have a preceding endpoint, the client <span class="bcp14">MAY</span> send
-<code>deferrable=true</code> on the originating grant's request to that endpoint
-as the optional pre-token hint defined in <a href="#pre-token-hints" class="auto internal xref">Section 4.2</a>. The
-preceding endpoint behaves identically with or without <code>deferrable</code>:
-the authorization server returns the originating grant's normal
-response and does not include any DTR-specific parameter.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<code>completion_mode=deferred</code> on the originating grant's request to that
+endpoint as the optional pre-token hint defined in <a href="#pre-token-hints" class="auto internal xref">Section 4.2</a>.
+The preceding endpoint behaves identically with or without
+<code>completion_mode</code>: the authorization server returns the originating
+grant's normal response and does not include any DTR-specific
+parameter.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <p id="section-5.1-2">The following is a non-normative example of an authorization-endpoint
 hint under DTR (line wraps within values are for display only):<a href="#section-5.1-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-5.1-3">
@@ -1796,7 +1827,7 @@ GET /authorize?response_type=code
   &amp;client_id=s6BhdRkqt3
   &amp;redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
   &amp;scope=profile
-  &amp;deferrable=true
+  &amp;completion_mode=deferred
   &amp;state=af0ifjsldkj HTTP/1.1
 Host: server.example.com
 </pre><a href="#section-5.1-3" class="pilcrow">¶</a>
@@ -1810,11 +1841,10 @@ Host: server.example.com
 DTR, with the following addition:<a href="#section-5.1.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1.1-2.1">
-              <p id="section-5.1.1-2.1.1">If the <code>deferrable</code> parameter is present, verify that its value is
-the literal <code>"true"</code> or the literal <code>"false"</code>. If the value is
-anything else, the authorization server <span class="bcp14">MUST</span> reject the request with
-the error <code>invalid_request</code>. If the parameter is absent, the
-authorization server processes the request as it would without DTR.<a href="#section-5.1.1-2.1.1" class="pilcrow">¶</a></p>
+              <p id="section-5.1.1-2.1.1">Apply the <code>completion_mode</code> rules of
+<a href="#the-completion-mode-parameter" class="auto internal xref">Section 4.1</a>: process recognized values, ignore
+unrecognized ones, and treat the request as requiring synchronous
+handling if the parameter is absent or does not include <code>deferred</code>.<a href="#section-5.1.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           </ul>
 <p id="section-5.1.1-3">If the authorization server encounters any error, it <span class="bcp14">MUST</span> return the
@@ -1830,7 +1860,7 @@ originating grant's normal error response.<a href="#section-5.1.1-3" class="pilc
         </h3>
 <p id="section-5.2-1">The authorization server returns the originating grant's normal
 response to a preceding-endpoint request, regardless of whether the
-request carried a <code>deferrable=true</code> hint.
+request carried a <code>completion_mode=deferred</code> hint.
 For the Authorization Code Grant of <span>[<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>, this is the
 authorization code response of <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-4.1.2" class="relref">Section 4.1.2</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
 <p id="section-5.2-2">The client processes the response per the originating grant's rules.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
@@ -1842,7 +1872,7 @@ authorization code response of <span><a href="https://datatracker.ietf.org/doc/h
 <a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-token-endpoint-initial-requ" class="section-name selfRef">Token Endpoint — Initial Request</a>
         </h3>
 <p id="section-5.3-1">The initial token request is the originating grant's token request,
-extended with the <code>deferrable</code> parameter from
+extended with the <code>completion_mode</code> parameter from
 <a href="#client-opt-in-signaling" class="auto internal xref">Section 4</a>.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
 <p id="section-5.3-2">The client <span class="bcp14">MAY</span> also include the following parameter:<a href="#section-5.3-2" class="pilcrow">¶</a></p>
 <span class="break"></span><dl class="dlParallel" id="section-5.3-3">
@@ -1861,7 +1891,7 @@ authenticate inbound callbacks (see <a href="#callback-endpoint-validation" clas
 </dd>
         <dd class="break"></dd>
 </dl>
-<p id="section-5.3-4">The successful response to this request is one of:<a href="#section-5.3-4" class="pilcrow">¶</a></p>
+<p id="section-5.3-4">The response to this request is one of:<a href="#section-5.3-4" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.3-5.1">
             <p id="section-5.3-5.1.1">The originating grant's normal token response per
@@ -1871,8 +1901,8 @@ the request synchronously.<a href="#section-5.3-5.1.1" class="pilcrow">¶</a></p
           <li class="normal" id="section-5.3-5.2">
             <p id="section-5.3-5.2.1">The deferred response defined in
 <a href="#token-endpoint-deferred-response" class="auto internal xref">Section 5.4</a>, if the authorization server
-elects to defer the request. In this case the authorization server
-also issues a <code>deferral_token</code> that the client uses for polling.<a href="#section-5.3-5.2.1" class="pilcrow">¶</a></p>
+elects to defer the request. The deferred response is an error
+response that carries a <code>deferral_token</code> the client uses for polling.<a href="#section-5.3-5.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 <p id="section-5.3-6">The following is a non-normative example of an initial token request
@@ -1887,7 +1917,7 @@ Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 grant_type=authorization_code
 &amp;code=SplxlOBeZQQYbYS6WxSbIA
 &amp;redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
-&amp;deferrable=true
+&amp;completion_mode=deferred
 &amp;client_notification_token=f4oirNBUlM
 </pre><a href="#section-5.3-7" class="pilcrow">¶</a>
 </div>
@@ -1900,18 +1930,17 @@ grant_type=authorization_code
 DTR, with the following additions:<a href="#section-5.3.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.3.1-2.1">
-              <p id="section-5.3.1-2.1.1">Apply the <code>deferrable</code> validation rules of
-<a href="#the-deferrable-parameter" class="auto internal xref">Section 4.1</a>: if present, the value <span class="bcp14">MUST</span> be the
-literal <code>"true"</code> or <code>"false"</code>; if absent, treat as if
-<code>deferrable=false</code> were supplied.<a href="#section-5.3.1-2.1.1" class="pilcrow">¶</a></p>
+              <p id="section-5.3.1-2.1.1">Apply the <code>completion_mode</code> rules of
+<a href="#the-completion-mode-parameter" class="auto internal xref">Section 4.1</a>: process recognized values and
+ignore unrecognized ones; if the parameter is absent or does not
+include <code>deferred</code>, treat the request as requiring synchronous
+handling.<a href="#section-5.3.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
             <li class="normal" id="section-5.3.1-2.2">
               <p id="section-5.3.1-2.2.1">If the originating grant has a preceding endpoint and the client
-sent <code>deferrable=true</code> on that earlier request, apply the
+sent <code>completion_mode=deferred</code> on that earlier request, apply the
 hint-consistency rule of <a href="#pre-token-hints" class="auto internal xref">Section 4.2</a>: if the token request
-does not also carry <code>deferrable=true</code> and the authorization server
-has committed to deferral-aware behavior on the strength of the
-hint such that it cannot complete the request synchronously, the
+does not also include <code>deferred</code> in <code>completion_mode</code>, the
 authorization server <span class="bcp14">MUST</span> reject the request with the error
 <code>invalid_request</code>.<a href="#section-5.3.1-2.2.1" class="pilcrow">¶</a></p>
 </li>
@@ -1933,32 +1962,28 @@ originating grant's rules, as appropriate.<a href="#section-5.3.1-3" class="pilc
         <h3 id="name-token-endpoint-deferred-res">
 <a href="#section-5.4" class="section-number selfRef">5.4. </a><a href="#name-token-endpoint-deferred-res" class="section-name selfRef">Token Endpoint — Deferred Response</a>
         </h3>
-<p id="section-5.4-1">When the authorization server elects to defer a token request that
-carries <code>deferrable=true</code>, it returns a 200 OK response on the token
-endpoint with a body that conforms to the OAuth 2.1 token response
-(<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-5.1" class="relref">Section 5.1</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>) and reuses its parameter structure as
-follows.<a href="#section-5.4-1" class="pilcrow">¶</a></p>
-<p id="section-5.4-2">The <code>access_token</code> parameter carries a deferral token rather than an
-access token. This follows the precedent set by Token Exchange
-(<span><a href="https://rfc-editor.org/rfc/rfc8693#section-2.2.1" class="relref">Section 2.2.1</a> of [<a href="#RFC8693" class="cite xref">RFC8693</a>]</span>), which states that "the identifier
-<code>access_token</code> is used for historical reasons and the issued token
-need not be an OAuth access token." The <code>issued_token_type</code> parameter
-(<span><a href="https://rfc-editor.org/rfc/rfc8693#section-2.2.1" class="relref">Section 2.2.1</a> of [<a href="#RFC8693" class="cite xref">RFC8693</a>]</span>) identifies the value carried in
-<code>access_token</code>; for a deferred response, its value is the URI
-<code>urn:ietf:params:oauth:token-type:deferral-token</code>.<a href="#section-5.4-2" class="pilcrow">¶</a></p>
-<p id="section-5.4-3">A deferral token is a sender-constrained, AS-issued credential that
+<p id="section-5.4-1">When the authorization server elects to defer a token request whose
+<code>completion_mode</code> includes <code>deferred</code>, it returns an error response on
+the token endpoint per <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-5.2" class="relref">Section 5.2</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span> with the HTTP
+status code 400 (Bad Request) and the error code <code>authorization_pending</code>.
+The deferred response is not a token response: it issues no access
+token and confers no access to any protected resource. Instead it
+carries a <code>deferral_token</code> that the client uses to retrieve the
+eventual token response once the deferred request resolves.<a href="#section-5.4-1" class="pilcrow">¶</a></p>
+<p id="section-5.4-2">A deferral token is a sender-constrained, AS-issued credential that
 represents a single pending authorization request. It is not an OAuth
 access token, refresh token, or authorization code, and it confers no
 access to any protected resource. Its sole use is as the
 <code>deferral_token</code> parameter on a polling request to the same
 authorization server's token endpoint, by which the client retrieves
 the eventual token response when the deferred request resolves. See
-<a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>.<a href="#section-5.4-3" class="pilcrow">¶</a></p>
-<p id="section-5.4-4">The response includes the following parameters:<a href="#section-5.4-4" class="pilcrow">¶</a></p>
-<span class="break"></span><dl class="dlParallel" id="section-5.4-5">
-          <dt id="section-5.4-5.1"><code>access_token</code></dt>
-          <dd style="margin-left: 1.5em" id="section-5.4-5.2">
-            <p id="section-5.4-5.2.1"><span class="bcp14">REQUIRED</span>. The deferral token issued by the authorization server.
+<a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>.<a href="#section-5.4-2" class="pilcrow">¶</a></p>
+<p id="section-5.4-3">In addition to the <code>error</code> parameter, the deferred response includes
+the following parameters:<a href="#section-5.4-3" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-5.4-4">
+          <dt id="section-5.4-4.1"><code>deferral_token</code></dt>
+          <dd style="margin-left: 1.5em" id="section-5.4-4.2">
+            <p id="section-5.4-4.2.1"><span class="bcp14">REQUIRED</span>. The deferral token issued by the authorization server.
 The deferral token <span class="bcp14">MUST</span> contain at least 128 bits of entropy
 (160 bits <span class="bcp14">RECOMMENDED</span>) drawn from a cryptographically secure
 random source per <span><a href="https://rfc-editor.org/rfc/rfc6749#section-10.10" class="relref">Section 10.10</a> of [<a href="#RFC6749" class="cite xref">RFC6749</a>]</span>. The deferral
@@ -1968,78 +1993,63 @@ The client uses this value when polling the token endpoint per
 <a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a> and, if a
 <code>deferred_client_notification_endpoint</code> is registered, the
 authorization server includes the same value when it notifies the
-client.<a href="#section-5.4-5.2.1" class="pilcrow">¶</a></p>
+client.<a href="#section-5.4-4.2.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-5.4-5.3"><code>issued_token_type</code></dt>
-          <dd style="margin-left: 1.5em" id="section-5.4-5.4">
-            <p id="section-5.4-5.4.1"><span class="bcp14">REQUIRED</span>. The URI
-<code>urn:ietf:params:oauth:token-type:deferral-token</code>, indicating that
-the value in <code>access_token</code> is a deferral token and not an access
-token. Clients <span class="bcp14">MUST</span> inspect <code>issued_token_type</code> before interpreting
-any other field in the response; the presence of this URI changes
-the meaning of <code>expires_in</code> and the absence of access-token-bearing
-fields.<a href="#section-5.4-5.4.1" class="pilcrow">¶</a></p>
-</dd>
-          <dd class="break"></dd>
-<dt id="section-5.4-5.5"><code>token_type</code></dt>
-          <dd style="margin-left: 1.5em" id="section-5.4-5.6">
-            <p id="section-5.4-5.6.1"><span class="bcp14">REQUIRED</span>. The value <code>N_A</code>, indicating that the issued token is not
-an access token type, per the convention established by
-<span><a href="https://rfc-editor.org/rfc/rfc8693#section-2.2.1" class="relref">Section 2.2.1</a> of [<a href="#RFC8693" class="cite xref">RFC8693</a>]</span>.<a href="#section-5.4-5.6.1" class="pilcrow">¶</a></p>
-</dd>
-          <dd class="break"></dd>
-<dt id="section-5.4-5.7"><code>expires_in</code></dt>
-          <dd style="margin-left: 1.5em" id="section-5.4-5.8">
-            <p id="section-5.4-5.8.1"><span class="bcp14">REQUIRED</span>. The lifetime in seconds of the deferral token. After this
+<dt id="section-5.4-4.3"><code>expires_in</code></dt>
+          <dd style="margin-left: 1.5em" id="section-5.4-4.4">
+            <p id="section-5.4-4.4.1"><span class="bcp14">REQUIRED</span>. The lifetime in seconds of the deferral token. After this
 interval, the authorization server <span class="bcp14">MUST</span> reject polling requests
 that present this deferral token with the error <code>expired_token</code>.
-When <code>issued_token_type</code> is
-<code>urn:ietf:params:oauth:token-type:deferral-token</code>, <code>expires_in</code>
-governs the lifetime of the deferral token, not the lifetime of any
-eventual access token; clients <span class="bcp14">MUST NOT</span> use this value to schedule
-access-token refresh.<a href="#section-5.4-5.8.1" class="pilcrow">¶</a></p>
+This value governs the lifetime of the deferral token, not the
+lifetime of any eventual access token; clients <span class="bcp14">MUST NOT</span> use this
+value to schedule access-token refresh.<a href="#section-5.4-4.4.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-5.4-5.9"><code>interval</code></dt>
-          <dd style="margin-left: 1.5em" id="section-5.4-5.10">
-            <p id="section-5.4-5.10.1"><span class="bcp14">REQUIRED</span>. The minimum number of seconds the client <span class="bcp14">MUST</span> wait
+<dt id="section-5.4-4.5"><code>interval</code></dt>
+          <dd style="margin-left: 1.5em" id="section-5.4-4.6">
+            <p id="section-5.4-4.6.1"><span class="bcp14">REQUIRED</span>. The minimum number of seconds the client <span class="bcp14">MUST</span> wait
 between polling requests, following the semantics of the <code>interval</code>
 field defined in <span><a href="https://rfc-editor.org/rfc/rfc8628#section-3.2" class="relref">Section 3.2</a> of [<a href="#RFC8628" class="cite xref">RFC8628</a>]</span>. The <code>interval</code> is
 carried only in the deferred response; subsequent polling responses
 with <code>authorization_pending</code> do not repeat it, and the client <span class="bcp14">MUST</span>
 retain the value from the deferred response for the lifetime of the
-deferral token.<a href="#section-5.4-5.10.1" class="pilcrow">¶</a></p>
+deferral token.<a href="#section-5.4-4.6.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-5.4-4.7"><code>error_description</code></dt>
+          <dd style="margin-left: 1.5em" id="section-5.4-4.8">
+            <p id="section-5.4-4.8.1"><span class="bcp14">OPTIONAL</span>. Human-readable text as defined in
+<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-5.2" class="relref">Section 5.2</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>, subject to the data-minimization rules
+of <a href="#progress-information-in-errors" class="auto internal xref">Section 8.3</a>.<a href="#section-5.4-4.8.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
-<p id="section-5.4-6">Example:<a href="#section-5.4-6" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-5.4-7">
+<p id="section-5.4-5">Example:<a href="#section-5.4-5" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.4-6">
 <pre>
-HTTP/1.1 200 OK
+HTTP/1.1 400 Bad Request
 Content-Type: application/json
 Cache-Control: no-store
 
 {
-  "access_token": "8d67dc78-7faa-4d41-aabd-67707b374255",
-  "issued_token_type":
-    "urn:ietf:params:oauth:token-type:deferral-token",
-  "token_type": "N_A",
+  "error": "authorization_pending",
+  "deferral_token": "8d67dc78-7faa-4d41-aabd-67707b374255",
   "expires_in": 10800,
   "interval": 60
 }
-</pre><a href="#section-5.4-7" class="pilcrow">¶</a>
+</pre><a href="#section-5.4-6" class="pilcrow">¶</a>
 </div>
-<p id="section-5.4-8">The authorization server <span class="bcp14">MUST</span> sender-constrain the deferral token
+<p id="section-5.4-7">The authorization server <span class="bcp14">MUST</span> sender-constrain the deferral token
 following the rules of <span>[<a href="#RFC9449" class="cite xref">RFC9449</a>], <a href="https://rfc-editor.org/rfc/rfc9449#section-5" class="relref">Section 5</a></span> for refresh tokens:
 when the initial token request that produced the deferred response
 was bound to a DPoP key (or to a TLS client certificate per
 <span>[<a href="#RFC8705" class="cite xref">RFC8705</a>]</span>), the deferral token is bound to the same key. Polling
 requests presenting this deferral token <span class="bcp14">MUST</span> be authenticated with
-the same key (see <a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>).<a href="#section-5.4-8" class="pilcrow">¶</a></p>
-<p id="section-5.4-9">Future profiles of this specification <span class="bcp14">MAY</span> add additional response
+the same key (see <a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>).<a href="#section-5.4-7" class="pilcrow">¶</a></p>
+<p id="section-5.4-8">Future profiles of this specification <span class="bcp14">MAY</span> add additional response
 parameters alongside the parameters defined here.
-Such parameters are out of scope for this document.<a href="#section-5.4-9" class="pilcrow">¶</a></p>
+Such parameters are out of scope for this document.<a href="#section-5.4-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="token-endpoint-polling">
@@ -2133,18 +2143,24 @@ error response per <a href="#token-endpoint-error-responses" class="auto interna
 <p id="section-5.5.2-1">When the deferred request has resolved successfully, the authorization
 server returns the originating grant's successful token response per
 <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-5.1" class="relref">Section 5.1</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>.
-The response includes an <code>access_token</code>, a <code>token_type</code> other than
-<code>N_A</code>, and any other fields the originating grant defines (such as
-<code>refresh_token</code> or <code>scope</code>).<a href="#section-5.5.2-1" class="pilcrow">¶</a></p>
-<p id="section-5.5.2-2">The <code>expires_in</code> field of this response carries the access-token
+The response includes an <code>access_token</code>, a <code>token_type</code>, and any other
+fields the originating grant defines (such as <code>refresh_token</code> or
+<code>scope</code>).<a href="#section-5.5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.5.2-2">When the originating grant defines an <code>issued_token_type</code> in its
+successful token response (as Token Exchange does, per
+<span><a href="https://rfc-editor.org/rfc/rfc8693#section-2.2.1" class="relref">Section 2.2.1</a> of [<a href="#RFC8693" class="cite xref">RFC8693</a>]</span>), the successful polling response carries
+that originating-grant <code>issued_token_type</code> value. The successful polling
+response is never a deferred response and <span class="bcp14">MUST NOT</span> carry the
+<code>urn:ietf:params:oauth:token-type:deferral-token</code> type.<a href="#section-5.5.2-2" class="pilcrow">¶</a></p>
+<p id="section-5.5.2-3">The <code>expires_in</code> field of this response carries the access-token
 lifetime per <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-5.1" class="relref">Section 5.1</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>; it is not the
 deferral-token lifetime conveyed by <code>expires_in</code> in the earlier
-deferred response.<a href="#section-5.5.2-2" class="pilcrow">¶</a></p>
-<p id="section-5.5.2-3">A <code>deferral_token</code> that has been redeemed for a successful response is
+deferred response.<a href="#section-5.5.2-3" class="pilcrow">¶</a></p>
+<p id="section-5.5.2-4">A <code>deferral_token</code> that has been redeemed for a successful response is
 no longer valid; subsequent polling requests with the same
-<code>deferral_token</code> <span class="bcp14">MUST</span> be rejected with <code>invalid_grant</code>.<a href="#section-5.5.2-3" class="pilcrow">¶</a></p>
-<p id="section-5.5.2-4">The following is a non-normative example:<a href="#section-5.5.2-4" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-5.5.2-5">
+<code>deferral_token</code> <span class="bcp14">MUST</span> be rejected with <code>invalid_grant</code>.<a href="#section-5.5.2-4" class="pilcrow">¶</a></p>
+<p id="section-5.5.2-5">The following is a non-normative example:<a href="#section-5.5.2-5" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.5.2-6">
 <pre>
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -2156,7 +2172,7 @@ Cache-Control: no-store
   "expires_in": 3600,
   "refresh_token": "8xLOxBtZp8"
 }
-</pre><a href="#section-5.5.2-5" class="pilcrow">¶</a>
+</pre><a href="#section-5.5.2-6" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
@@ -2172,40 +2188,52 @@ request of <a href="#token-endpoint-initial-request" class="auto internal xref">
 <a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a> — is invalid, unauthorized, or pending, the
 authorization server returns an error response per
 <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-5.2" class="relref">Section 5.2</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>.<a href="#section-5.6-1" class="pilcrow">¶</a></p>
-<p id="section-5.6-2">In addition to the error codes defined in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-5.2" class="relref">Section 5.2</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>,
+<p id="section-5.6-2">The authorization server <span class="bcp14">MUST</span> include the <code>Cache-Control: no-store</code>
+header field from <span><a href="https://rfc-editor.org/rfc/rfc7234#section-5.2.2.3" class="relref">Section 5.2.2.3</a> of [<a href="#RFC7234" class="cite xref">RFC7234</a>]</span> in every error response
+defined in this section, including the deferred response of
+<a href="#token-endpoint-deferred-response" class="auto internal xref">Section 5.4</a> and any <code>authorization_pending</code> or
+<code>slow_down</code> response. This prevents an intermediary or the client from
+caching a transient <code>authorization_pending</code> response and replaying it,
+which could otherwise cause the client to poll indefinitely.<a href="#section-5.6-2" class="pilcrow">¶</a></p>
+<p id="section-5.6-3">In addition to the error codes defined in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-5.2" class="relref">Section 5.2</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>,
 this specification uses the following error codes, with semantics
-aligned with the corresponding codes in <span><a href="https://rfc-editor.org/rfc/rfc8628#section-3.5" class="relref">Section 3.5</a> of [<a href="#RFC8628" class="cite xref">RFC8628</a>]</span>:<a href="#section-5.6-2" class="pilcrow">¶</a></p>
-<span class="break"></span><dl class="dlParallel" id="section-5.6-3">
-          <dt id="section-5.6-3.1"><code>authorization_pending</code></dt>
-          <dd style="margin-left: 1.5em" id="section-5.6-3.2">
-            <p id="section-5.6-3.2.1">The deferred request has not yet resolved. The client <span class="bcp14">SHOULD</span> continue
-polling at the rate established by <code>interval</code>.<a href="#section-5.6-3.2.1" class="pilcrow">¶</a></p>
+aligned with the corresponding codes in <span><a href="https://rfc-editor.org/rfc/rfc8628#section-3.5" class="relref">Section 3.5</a> of [<a href="#RFC8628" class="cite xref">RFC8628</a>]</span>:<a href="#section-5.6-3" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-5.6-4">
+          <dt id="section-5.6-4.1"><code>authorization_pending</code></dt>
+          <dd style="margin-left: 1.5em" id="section-5.6-4.2">
+            <p id="section-5.6-4.2.1">The request has not yet resolved. On the initial token request, this
+is the deferred response of <a href="#token-endpoint-deferred-response" class="auto internal xref">Section 5.4</a>, which
+establishes the <code>deferral_token</code> and carries <code>expires_in</code> and
+<code>interval</code>. On a subsequent polling request, it indicates the deferred
+request is still pending; such responses reference the established
+<code>deferral_token</code> and do not repeat it. In either case the client
+<span class="bcp14">SHOULD</span> continue polling at the rate established by <code>interval</code>.<a href="#section-5.6-4.2.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-5.6-3.3"><code>slow_down</code></dt>
-          <dd style="margin-left: 1.5em" id="section-5.6-3.4">
-            <p id="section-5.6-3.4.1">The client is polling faster than <code>interval</code> allows. The client <span class="bcp14">MUST</span>
-increase its polling interval as described in <a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>.<a href="#section-5.6-3.4.1" class="pilcrow">¶</a></p>
+<dt id="section-5.6-4.3"><code>slow_down</code></dt>
+          <dd style="margin-left: 1.5em" id="section-5.6-4.4">
+            <p id="section-5.6-4.4.1">The client is polling faster than <code>interval</code> allows. The client <span class="bcp14">MUST</span>
+increase its polling interval as described in <a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>.<a href="#section-5.6-4.4.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-5.6-3.5"><code>expired_token</code></dt>
-          <dd style="margin-left: 1.5em" id="section-5.6-3.6">
-            <p id="section-5.6-3.6.1">The <code>deferral_token</code> has expired. The client <span class="bcp14">MUST</span> stop polling with
-this <code>deferral_token</code> and <span class="bcp14">MAY</span> initiate a new flow.<a href="#section-5.6-3.6.1" class="pilcrow">¶</a></p>
+<dt id="section-5.6-4.5"><code>expired_token</code></dt>
+          <dd style="margin-left: 1.5em" id="section-5.6-4.6">
+            <p id="section-5.6-4.6.1">The <code>deferral_token</code> has expired. The client <span class="bcp14">MUST</span> stop polling with
+this <code>deferral_token</code> and <span class="bcp14">MAY</span> initiate a new flow.<a href="#section-5.6-4.6.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-5.6-3.7"><code>access_denied</code></dt>
-          <dd style="margin-left: 1.5em" id="section-5.6-3.8">
-            <p id="section-5.6-3.8.1">The deferred request was denied — for example, because the
+<dt id="section-5.6-4.7"><code>access_denied</code></dt>
+          <dd style="margin-left: 1.5em" id="section-5.6-4.8">
+            <p id="section-5.6-4.8.1">The deferred request was denied — for example, because the
 authorization could not be granted, or because the request was
-cancelled per <a href="#cancellation" class="auto internal xref">Section 7</a>.<a href="#section-5.6-3.8.1" class="pilcrow">¶</a></p>
+cancelled per <a href="#cancellation" class="auto internal xref">Section 7</a>.<a href="#section-5.6-4.8.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
-<p id="section-5.6-4">The following additional rules apply:<a href="#section-5.6-4" class="pilcrow">¶</a></p>
+<p id="section-5.6-5">The following additional rules apply:<a href="#section-5.6-5" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.6-5.1">
-            <p id="section-5.6-5.1.1">A <code>deferral_token</code> that is not recognized, was issued to a
+<li class="normal" id="section-5.6-6.1">
+            <p id="section-5.6-6.1.1">A <code>deferral_token</code> that is not recognized, was issued to a
 different client, or has already been redeemed <span class="bcp14">MUST</span> result in an
 <code>invalid_grant</code> error per <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-15#section-3.2.4" class="relref">Section 3.2.4</a> of [<a href="#OAUTH-2.1" class="cite xref">OAUTH-2.1</a>]</span>. When the
 server has confirmed that the token was issued to the authenticated
@@ -2215,28 +2243,27 @@ token is unrecognized or was issued to a different client, the server
 <span class="bcp14">MUST</span> treat it as unknown and <span class="bcp14">MUST NOT</span> provide detail that would allow
 distinguishing these cases. Clients <span class="bcp14">MUST</span> treat all <code>invalid_grant</code>
 responses as terminal and <span class="bcp14">MUST NOT</span> retry with the same
-<code>deferral_token</code>.<a href="#section-5.6-5.1.1" class="pilcrow">¶</a></p>
+<code>deferral_token</code>.<a href="#section-5.6-6.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-5.6-5.2">
-            <p id="section-5.6-5.2.1">A token request that contradicts a <code>deferrable=true</code> hint sent on
-the originating grant's preceding-endpoint request, where the
-authorization server has already committed to deferral-aware
-behavior on the strength of that hint, <span class="bcp14">MUST</span> result in an
-<code>invalid_request</code> error per <a href="#pre-token-hints" class="auto internal xref">Section 4.2</a>.<a href="#section-5.6-5.2.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-5.6-6.2">
+            <p id="section-5.6-6.2.1">A token request that omits <code>deferred</code> from <code>completion_mode</code> after
+a <code>completion_mode=deferred</code> hint was sent on the originating
+grant's preceding-endpoint request <span class="bcp14">MUST</span> result in an
+<code>invalid_request</code> error per <a href="#pre-token-hints" class="auto internal xref">Section 4.2</a>.<a href="#section-5.6-6.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-5.6-5.3">
-            <p id="section-5.6-5.3.1">If a client polls faster than <code>interval</code> repeatedly, the authorization
+          <li class="normal" id="section-5.6-6.3">
+            <p id="section-5.6-6.3.1">If a client polls faster than <code>interval</code> repeatedly, the authorization
 server <span class="bcp14">MAY</span> escalate from <code>slow_down</code> to <code>invalid_request</code>. A client
 receiving <code>invalid_request</code> <span class="bcp14">MUST NOT</span> make further requests with the
-same <code>deferral_token</code>.<a href="#section-5.6-5.3.1" class="pilcrow">¶</a></p>
+same <code>deferral_token</code>.<a href="#section-5.6-6.3.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-5.6-6">The data-minimization rules of <a href="#progress-information-in-errors" class="auto internal xref">Section 8.2</a>
+<p id="section-5.6-7">The data-minimization rules of <a href="#progress-information-in-errors" class="auto internal xref">Section 8.3</a>
 apply to the <code>error_description</code> field of any error response defined
 in this section, including <code>authorization_pending</code> responses that
-carry progress information.<a href="#section-5.6-6" class="pilcrow">¶</a></p>
-<p id="section-5.6-7">The following is a non-normative example:<a href="#section-5.6-7" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-5.6-8">
+carry progress information.<a href="#section-5.6-7" class="pilcrow">¶</a></p>
+<p id="section-5.6-8">The following is a non-normative example:<a href="#section-5.6-8" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.6-9">
 <pre>
 HTTP/1.1 400 Bad Request
 Content-Type: application/json
@@ -2247,7 +2274,7 @@ Cache-Control: no-store
   "error_description":
     "The deferred request is still being processed."
 }
-</pre><a href="#section-5.6-8" class="pilcrow">¶</a>
+</pre><a href="#section-5.6-9" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
@@ -2372,7 +2399,7 @@ the authorization server's revocation endpoint per <span>[<a href="#RFC7009" cla
           <dt id="section-7.1-2.1"><code>token</code></dt>
           <dd style="margin-left: 1.5em" id="section-7.1-2.2">
             <p id="section-7.1-2.2.1"><span class="bcp14">REQUIRED</span>. The deferral token to cancel, exactly as received in the
-<code>access_token</code> field of the deferred response.<a href="#section-7.1-2.2.1" class="pilcrow">¶</a></p>
+<code>deferral_token</code> field of the deferred response.<a href="#section-7.1-2.2.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
 <dt id="section-7.1-2.3"><code>token_type_hint</code></dt>
@@ -2514,25 +2541,58 @@ warrant the durability of polling: a single lost push request would
 otherwise lose the outcome of the entire deferred request.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="progress-information-in-errors">
+<div id="obtaining-an-immediate-result-alongside-a-deferred-request">
 <section id="section-8.2">
-        <h3 id="name-progress-information-in-err">
-<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-progress-information-in-err" class="section-name selfRef">Progress Information in Errors</a>
+        <h3 id="name-obtaining-an-immediate-resu">
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-obtaining-an-immediate-resu" class="section-name selfRef">Obtaining an Immediate Result Alongside a Deferred Request</a>
         </h3>
-<p id="section-8.2-1">When responding to a polling request with <code>authorization_pending</code>, the
+<p id="section-8.2-1">A deferred request may take an arbitrarily long time to resolve. A client
+that also requires an immediate result — for example, a basic access token
+or an ID token to render initial user experience — can obtain one by
+starting a separate, non-deferred grant in parallel, while it continues to
+poll the deferred request for the final result.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+<p id="section-8.2-2">How the client obtains the immediate result depends on the originating
+grant:<a href="#section-8.2-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.2-3.1">
+            <p id="section-8.2-3.1.1">For the Authorization Code Grant, the client can perform a parallel
+OpenID Connect authentication with <code>prompt=none</code> to obtain an ID token
+(and, where applicable, an access token) without further user
+interaction.<a href="#section-8.2-3.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-8.2-3.2">
+            <p id="section-8.2-3.2.1">For the Client Credentials Grant or <span>[<a href="#ID-JAG" class="cite xref">ID-JAG</a>]</span>, the client can send an
+additional token request that omits the <code>completion_mode</code> parameter
+entirely, which the authorization server completes synchronously per the
+originating grant's rules.<a href="#section-8.2-3.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-8.2-4">The immediate result and the deferred result are independent: the immediate
+result reflects what the authorization server can issue synchronously, while
+the deferred request continues toward the final, possibly higher-assurance,
+token response. This lets a client proceed with available work immediately
+rather than blocking on the deferred outcome.<a href="#section-8.2-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="progress-information-in-errors">
+<section id="section-8.3">
+        <h3 id="name-progress-information-in-err">
+<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-progress-information-in-err" class="section-name selfRef">Progress Information in Errors</a>
+        </h3>
+<p id="section-8.3-1">When responding to a polling request with <code>authorization_pending</code>, the
 authorization server <span class="bcp14">SHOULD</span> include progress information in the
 <code>error_description</code> field where appropriate.
 Examples include the current step in a multi-step process, the queue
 position of the deferred request, or an estimate of remaining
-processing time.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
-<p id="section-8.2-2">Authorization servers <span class="bcp14">MUST NOT</span> include personal data, document
+processing time.<a href="#section-8.3-1" class="pilcrow">¶</a></p>
+<p id="section-8.3-2">Authorization servers <span class="bcp14">MUST NOT</span> include personal data, document
 identifiers, or any data subject to data-minimization obligations in
 the <code>error_description</code> field. Progress information <span class="bcp14">SHOULD</span> be
 expressed as opaque step identifiers (for example,
 <code>step=document_review</code>) rather than free-form descriptions of user
-content.<a href="#section-8.2-2" class="pilcrow">¶</a></p>
-<p id="section-8.2-3">The client <span class="bcp14">MAY</span> surface this information to a human operator if
-appropriate. Progress information is informational and the client <span class="bcp14">MUST NOT</span> depend on its presence or format.<a href="#section-8.2-3" class="pilcrow">¶</a></p>
+content.<a href="#section-8.3-2" class="pilcrow">¶</a></p>
+<p id="section-8.3-3">The client <span class="bcp14">MAY</span> surface this information to a human operator if
+appropriate. Progress information is informational and the client <span class="bcp14">MUST NOT</span> depend on its presence or format.<a href="#section-8.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2769,8 +2829,8 @@ respect to log redaction, transport security, and at-rest storage.
 Standard web-server access logs that capture POST bodies retain
 deferral token values for the entire log retention window;
 implementations <span class="bcp14">SHOULD</span> configure their logging stacks to redact the
-<code>deferral_token</code> request parameter and the <code>access_token</code> response
-field of deferred responses (the latter carries the same value per
+<code>deferral_token</code> parameter wherever it appears — both as the polling
+request parameter and as the response field of deferred responses (see
 <a href="#token-endpoint-deferred-response" class="auto internal xref">Section 5.4</a>).<a href="#section-10.8-1" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2831,7 +2891,7 @@ Final values for <code>Reference</code> are this RFC once published.<a href="#se
 the IANA "OAuth Parameters" registry:<a href="#section-12.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-12.1-2.1">
-            <p id="section-12.1-2.1.1">Parameter name: <code>deferrable</code><a href="#section-12.1-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-12.1-2.1.1">Parameter name: <code>completion_mode</code><a href="#section-12.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.1-2.2">
             <p id="section-12.1-2.2.1">Parameter usage location: authorization request, token request<a href="#section-12.1-2.2.1" class="pilcrow">¶</a></p>
@@ -2843,52 +2903,71 @@ the IANA "OAuth Parameters" registry:<a href="#section-12.1-1" class="pilcrow">�
             <p id="section-12.1-2.4.1">Specification Document(s): this specification<a href="#section-12.1-2.4.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
+<p id="section-12.1-3">The value of <code>completion_mode</code> is a space-separated list of values
+registered in the "OAuth Completion Mode Values" registry defined below.<a href="#section-12.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="oauth-dynamic-client-registration-metadata-registration">
+<div id="oauth-completion-mode-values-registry">
 <section id="section-12.2">
-        <h3 id="name-oauth-dynamic-client-regist">
-<a href="#section-12.2" class="section-number selfRef">12.2. </a><a href="#name-oauth-dynamic-client-regist" class="section-name selfRef">OAuth Dynamic Client Registration Metadata Registration</a>
+        <h3 id="name-oauth-completion-mode-value">
+<a href="#section-12.2" class="section-number selfRef">12.2. </a><a href="#name-oauth-completion-mode-value" class="section-name selfRef">OAuth Completion Mode Values Registry</a>
         </h3>
-<p id="section-12.2-1">This specification requests registration of the following client metadata
-definition in the IANA "OAuth Dynamic Client Registration Metadata"
-registry <span>[<a href="#RFC7591" class="cite xref">RFC7591</a>]</span>:<a href="#section-12.2-1" class="pilcrow">¶</a></p>
+<p id="section-12.2-1">This specification requests the creation of a new IANA registry titled
+"OAuth Completion Mode Values" to hold the values that may appear in the
+space-separated <code>completion_mode</code> request parameter.<a href="#section-12.2-1" class="pilcrow">¶</a></p>
+<p id="section-12.2-2">The registry follows the "Specification Required" registration policy
+<span>[<a href="#RFC8126" class="cite xref">RFC8126</a>]</span>. Each registration comprises:<a href="#section-12.2-2" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-12.2-2.1">
-            <p id="section-12.2-2.1.1">Client Metadata Name: <code>deferred_client_notification_endpoint</code><a href="#section-12.2-2.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-12.2-3.1">
+            <p id="section-12.2-3.1.1">Value: the completion-mode value (a single token containing no spaces).<a href="#section-12.2-3.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-12.2-2.2">
-            <p id="section-12.2-2.2.1">Client Metadata Description: HTTPS URL to which the authorization
-server sends a notification when a deferred authorization request
-resolves.<a href="#section-12.2-2.2.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-12.2-3.2">
+            <p id="section-12.2-3.2.1">Description: a brief description of the value's meaning.<a href="#section-12.2-3.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-12.2-2.3">
-            <p id="section-12.2-2.3.1">Change Controller: IETF<a href="#section-12.2-2.3.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-12.2-3.3">
+            <p id="section-12.2-3.3.1">Change Controller: for values registered by the IETF, "IETF";
+otherwise the registering party.<a href="#section-12.2-3.3.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-12.2-2.4">
-            <p id="section-12.2-2.4.1">Specification Document(s): this specification<a href="#section-12.2-2.4.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-12.2-3.4">
+            <p id="section-12.2-3.4.1">Specification Document(s): a reference to the document defining the
+value.<a href="#section-12.2-3.4.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-12.2-4">This specification registers the following initial value:<a href="#section-12.2-4" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-12.2-5.1">
+            <p id="section-12.2-5.1.1">Value: <code>deferred</code><a href="#section-12.2-5.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.2-5.2">
+            <p id="section-12.2-5.2.1">Description: The client accepts a deferred response
+(<a href="#token-endpoint-deferred-response" class="auto internal xref">Section 5.4</a>) in place of an immediate token
+response or error.<a href="#section-12.2-5.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.2-5.3">
+            <p id="section-12.2-5.3.1">Change Controller: IETF<a href="#section-12.2-5.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.2-5.4">
+            <p id="section-12.2-5.4.1">Specification Document(s): this specification<a href="#section-12.2-5.4.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 </section>
 </div>
-<div id="oauth-grant-type-registry">
+<div id="oauth-dynamic-client-registration-metadata-registration">
 <section id="section-12.3">
-        <h3 id="name-oauth-grant-type-registry">
-<a href="#section-12.3" class="section-number selfRef">12.3. </a><a href="#name-oauth-grant-type-registry" class="section-name selfRef">OAuth Grant Type Registry</a>
+        <h3 id="name-oauth-dynamic-client-regist">
+<a href="#section-12.3" class="section-number selfRef">12.3. </a><a href="#name-oauth-dynamic-client-regist" class="section-name selfRef">OAuth Dynamic Client Registration Metadata Registration</a>
         </h3>
-<p id="section-12.3-1">This specification requests registration of the following grant type
-in the IANA "OAuth Grant Type" registry, used as the value of the
-<code>grant_type</code> parameter on polling token endpoint requests
-(<a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>):<a href="#section-12.3-1" class="pilcrow">¶</a></p>
+<p id="section-12.3-1">This specification requests registration of the following client metadata
+definition in the IANA "OAuth Dynamic Client Registration Metadata"
+registry <span>[<a href="#RFC7591" class="cite xref">RFC7591</a>]</span>:<a href="#section-12.3-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-12.3-2.1">
-            <p id="section-12.3-2.1.1">Name: <code>urn:ietf:params:oauth:grant-type:deferred</code><a href="#section-12.3-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-12.3-2.1.1">Client Metadata Name: <code>deferred_client_notification_endpoint</code><a href="#section-12.3-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.3-2.2">
-            <p id="section-12.3-2.2.1">Description: Polling grant type used to retrieve the eventual token
-response for a deferred authorization request, identified by a
-deferral token issued in a deferred response per
-<a href="#token-endpoint-deferred-response" class="auto internal xref">Section 5.4</a>.<a href="#section-12.3-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-12.3-2.2.1">Client Metadata Description: HTTPS URL to which the authorization
+server sends a notification when a deferred authorization request
+resolves.<a href="#section-12.3-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.3-2.3">
             <p id="section-12.3-2.3.1">Change Controller: IETF<a href="#section-12.3-2.3.1" class="pilcrow">¶</a></p>
@@ -2899,21 +2978,24 @@ deferral token issued in a deferred response per
         </ul>
 </section>
 </div>
-<div id="oauth-authorization-server-metadata-registry">
+<div id="oauth-grant-type-registry">
 <section id="section-12.4">
-        <h3 id="name-oauth-authorization-server-">
-<a href="#section-12.4" class="section-number selfRef">12.4. </a><a href="#name-oauth-authorization-server-" class="section-name selfRef">OAuth Authorization Server Metadata Registry</a>
+        <h3 id="name-oauth-grant-type-registry">
+<a href="#section-12.4" class="section-number selfRef">12.4. </a><a href="#name-oauth-grant-type-registry" class="section-name selfRef">OAuth Grant Type Registry</a>
         </h3>
-<p id="section-12.4-1">This specification requests registration of the following metadata
-parameters in the IANA "OAuth Authorization Server Metadata" registry
-defined in <span>[<a href="#RFC8414" class="cite xref">RFC8414</a>]</span>:<a href="#section-12.4-1" class="pilcrow">¶</a></p>
+<p id="section-12.4-1">This specification requests registration of the following grant type
+in the IANA "OAuth Grant Type" registry, used as the value of the
+<code>grant_type</code> parameter on polling token endpoint requests
+(<a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>):<a href="#section-12.4-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-12.4-2.1">
-            <p id="section-12.4-2.1.1">Metadata Name: <code>deferred_token_response_supported</code><a href="#section-12.4-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-12.4-2.1.1">Name: <code>urn:ietf:params:oauth:grant-type:deferred</code><a href="#section-12.4-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.4-2.2">
-            <p id="section-12.4-2.2.1">Metadata Description: Boolean. If <code>true</code>, the authorization server
-supports the deferred token response defined in this specification.<a href="#section-12.4-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-12.4-2.2.1">Description: Polling grant type used to retrieve the eventual token
+response for a deferred authorization request, identified by a
+deferral token issued in a deferred response per
+<a href="#token-endpoint-deferred-response" class="auto internal xref">Section 5.4</a>.<a href="#section-12.4-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.4-2.3">
             <p id="section-12.4-2.3.1">Change Controller: IETF<a href="#section-12.4-2.3.1" class="pilcrow">¶</a></p>
@@ -2921,37 +3003,24 @@ supports the deferred token response defined in this specification.<a href="#sec
           <li class="normal" id="section-12.4-2.4">
             <p id="section-12.4-2.4.1">Specification Document(s): this specification<a href="#section-12.4-2.4.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-12.4-2.5">
-            <p id="section-12.4-2.5.1">Metadata Name: <code>revocation_endpoint_token_type_values_supported</code><a href="#section-12.4-2.5.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-12.4-2.6">
-            <p id="section-12.4-2.6.1">Metadata Description: JSON array of token type URIs accepted by the
-authorization server's revocation endpoint
-(<code>revocation_endpoint</code>) as values of the <code>token_type_hint</code>
-parameter.<a href="#section-12.4-2.6.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-12.4-2.7">
-            <p id="section-12.4-2.7.1">Change Controller: IETF<a href="#section-12.4-2.7.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-12.4-2.8">
-            <p id="section-12.4-2.8.1">Specification Document(s): this specification<a href="#section-12.4-2.8.1" class="pilcrow">¶</a></p>
-</li>
         </ul>
 </section>
 </div>
-<div id="oauth-uri-registration">
+<div id="oauth-authorization-server-metadata-registry">
 <section id="section-12.5">
-        <h3 id="name-oauth-uri-registration">
-<a href="#section-12.5" class="section-number selfRef">12.5. </a><a href="#name-oauth-uri-registration" class="section-name selfRef">OAuth URI Registration</a>
+        <h3 id="name-oauth-authorization-server-">
+<a href="#section-12.5" class="section-number selfRef">12.5. </a><a href="#name-oauth-authorization-server-" class="section-name selfRef">OAuth Authorization Server Metadata Registry</a>
         </h3>
-<p id="section-12.5-1">This specification requests registration of the following URIs in the
-IANA "OAuth URI" registry:<a href="#section-12.5-1" class="pilcrow">¶</a></p>
+<p id="section-12.5-1">This specification requests registration of the following metadata
+parameters in the IANA "OAuth Authorization Server Metadata" registry
+defined in <span>[<a href="#RFC8414" class="cite xref">RFC8414</a>]</span>:<a href="#section-12.5-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-12.5-2.1">
-            <p id="section-12.5-2.1.1">URI: <code>urn:ietf:params:oauth:token-type:deferral-token</code><a href="#section-12.5-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-12.5-2.1.1">Metadata Name: <code>deferred_token_response_supported</code><a href="#section-12.5-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.5-2.2">
-            <p id="section-12.5-2.2.1">Common Name: Deferral Token<a href="#section-12.5-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-12.5-2.2.1">Metadata Description: Boolean. If <code>true</code>, the authorization server
+supports the deferred token response defined in this specification.<a href="#section-12.5-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.5-2.3">
             <p id="section-12.5-2.3.1">Change Controller: IETF<a href="#section-12.5-2.3.1" class="pilcrow">¶</a></p>
@@ -2960,16 +3029,54 @@ IANA "OAuth URI" registry:<a href="#section-12.5-1" class="pilcrow">¶</a></p>
             <p id="section-12.5-2.4.1">Specification Document(s): this specification<a href="#section-12.5-2.4.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.5-2.5">
-            <p id="section-12.5-2.5.1">URI: <code>urn:ietf:params:oauth:grant-type:deferred</code><a href="#section-12.5-2.5.1" class="pilcrow">¶</a></p>
+            <p id="section-12.5-2.5.1">Metadata Name: <code>revocation_endpoint_token_type_values_supported</code><a href="#section-12.5-2.5.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.5-2.6">
-            <p id="section-12.5-2.6.1">Common Name: Deferred Token Response Polling Grant<a href="#section-12.5-2.6.1" class="pilcrow">¶</a></p>
+            <p id="section-12.5-2.6.1">Metadata Description: JSON array of token type URIs accepted by the
+authorization server's revocation endpoint
+(<code>revocation_endpoint</code>) as values of the <code>token_type_hint</code>
+parameter.<a href="#section-12.5-2.6.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.5-2.7">
             <p id="section-12.5-2.7.1">Change Controller: IETF<a href="#section-12.5-2.7.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-12.5-2.8">
             <p id="section-12.5-2.8.1">Specification Document(s): this specification<a href="#section-12.5-2.8.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="oauth-uri-registration">
+<section id="section-12.6">
+        <h3 id="name-oauth-uri-registration">
+<a href="#section-12.6" class="section-number selfRef">12.6. </a><a href="#name-oauth-uri-registration" class="section-name selfRef">OAuth URI Registration</a>
+        </h3>
+<p id="section-12.6-1">This specification requests registration of the following URIs in the
+IANA "OAuth URI" registry:<a href="#section-12.6-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-12.6-2.1">
+            <p id="section-12.6-2.1.1">URI: <code>urn:ietf:params:oauth:token-type:deferral-token</code><a href="#section-12.6-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.6-2.2">
+            <p id="section-12.6-2.2.1">Common Name: Deferral Token<a href="#section-12.6-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.6-2.3">
+            <p id="section-12.6-2.3.1">Change Controller: IETF<a href="#section-12.6-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.6-2.4">
+            <p id="section-12.6-2.4.1">Specification Document(s): this specification<a href="#section-12.6-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.6-2.5">
+            <p id="section-12.6-2.5.1">URI: <code>urn:ietf:params:oauth:grant-type:deferred</code><a href="#section-12.6-2.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.6-2.6">
+            <p id="section-12.6-2.6.1">Common Name: Deferred Token Response Polling Grant<a href="#section-12.6-2.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.6-2.7">
+            <p id="section-12.6-2.7.1">Change Controller: IETF<a href="#section-12.6-2.7.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-12.6-2.8">
+            <p id="section-12.6-2.8.1">Specification Document(s): this specification<a href="#section-12.6-2.8.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 </section>
@@ -3003,9 +3110,17 @@ IANA "OAuth URI" registry:<a href="#section-12.5-1" class="pilcrow">¶</a></p>
         <dd>
 <span class="refAuthor">Lodderstedt, T., Ed.</span>, <span class="refAuthor">Dronia, S.</span>, and <span class="refAuthor">M. Scurtescu</span>, <span class="refTitle">"OAuth 2.0 Token Revocation"</span>, <span class="seriesInfo">RFC 7009</span>, <span class="seriesInfo">DOI 10.17487/RFC7009</span>, <time datetime="2013-08" class="refDate">August 2013</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7009">https://www.rfc-editor.org/rfc/rfc7009</a>&gt;</span>. </dd>
 <dd class="break"></dd>
+<dt id="RFC7234">[RFC7234]</dt>
+        <dd>
+<span class="refAuthor">Fielding, R., Ed.</span>, <span class="refAuthor">Nottingham, M., Ed.</span>, and <span class="refAuthor">J. Reschke, Ed.</span>, <span class="refTitle">"Hypertext Transfer Protocol (HTTP/1.1): Caching"</span>, <span class="seriesInfo">RFC 7234</span>, <span class="seriesInfo">DOI 10.17487/RFC7234</span>, <time datetime="2014-06" class="refDate">June 2014</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7234">https://www.rfc-editor.org/rfc/rfc7234</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="RFC7591">[RFC7591]</dt>
         <dd>
 <span class="refAuthor">Richer, J., Ed.</span>, <span class="refAuthor">Jones, M.</span>, <span class="refAuthor">Bradley, J.</span>, <span class="refAuthor">Machulak, M.</span>, and <span class="refAuthor">P. Hunt</span>, <span class="refTitle">"OAuth 2.0 Dynamic Client Registration Protocol"</span>, <span class="seriesInfo">RFC 7591</span>, <span class="seriesInfo">DOI 10.17487/RFC7591</span>, <time datetime="2015-07" class="refDate">July 2015</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7591">https://www.rfc-editor.org/rfc/rfc7591</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8126">[RFC8126]</dt>
+        <dd>
+<span class="refAuthor">Cotton, M.</span>, <span class="refAuthor">Leiba, B.</span>, and <span class="refAuthor">T. Narten</span>, <span class="refTitle">"Guidelines for Writing an IANA Considerations Section in RFCs"</span>, <span class="seriesInfo">BCP 26</span>, <span class="seriesInfo">RFC 8126</span>, <span class="seriesInfo">DOI 10.17487/RFC8126</span>, <time datetime="2017-06" class="refDate">June 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8126">https://www.rfc-editor.org/rfc/rfc8126</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
         <dd>
@@ -3084,7 +3199,8 @@ of band; the user does not need to remain engaged with the
 application during that time.<a href="#appendix-A.1-1" class="pilcrow">¶</a></p>
 <p id="appendix-A.1-2">When the user initiates the transaction, the banking application
 sends an authorization request to the bank's authorization server with
-<code>deferrable=true</code>. The authorization server's risk-analysis system
+<code>completion_mode=deferred</code>. The authorization server's risk-analysis
+system
 flags the transaction for additional review. The authorization
 server returns a deferred response carrying a deferral token.<a href="#appendix-A.1-2" class="pilcrow">¶</a></p>
 <p id="appendix-A.1-3">The bank performs additional verification — contacting the user
@@ -3109,8 +3225,9 @@ details, or unlocking a sensitive feature. The authorization server
 needs to step up the user's assurance before issuing the token; the
 step-up may involve biometric verification or document presentation
 that is not guaranteed to complete instantly.<a href="#appendix-A.2-1" class="pilcrow">¶</a></p>
-<p id="appendix-A.2-2">The client sends an authorization request with <code>deferrable=true</code>. The
-authorization server determines that the requested operation
+<p id="appendix-A.2-2">The client sends an authorization request with
+<code>completion_mode=deferred</code>. The authorization server determines that
+the requested operation
 requires step-up, collects the relevant information from the user,
 returns a deferred response, and proceeds with the
 verification asynchronously. The client renders any unblocked steps
@@ -3135,7 +3252,7 @@ hours. Regulation on automated decision-making in identity
 verification often makes the human-in-the-loop case mandatory rather
 than optional.<a href="#appendix-A.3-2" class="pilcrow">¶</a></p>
 <p id="appendix-A.3-3">The client sends the originating grant's token request with
-<code>deferrable=true</code>. When automated verification suffices, the
+<code>completion_mode=deferred</code>. When automated verification suffices, the
 authorization server completes synchronously. When it does not, the
 authorization server returns a deferred response, queues the
 evidence for human review, and notifies the client when the review
@@ -3156,7 +3273,8 @@ requires authorization beyond what was provisioned at enrollment —
 for example, executing a purchase above the per-transaction ceiling
 the principal granted.<a href="#appendix-A.4-1" class="pilcrow">¶</a></p>
 <p id="appendix-A.4-2">The agent sends a token request to the authorization server with
-<code>deferrable=true</code>. The authorization server, recognizing that the
+<code>completion_mode=deferred</code>. The authorization server, recognizing that
+the
 requested scope exceeds standing approval, contacts the human
 principal out of band — by mobile push, email, or a separate
 approval application — and returns a deferred response to the agent.
@@ -3181,7 +3299,7 @@ through an Identity Governance and Administration (IGA) workflow.
 The workflow may involve approvals from the requestor's manager, the
 resource owner, and a security reviewer, and may take from several
 hours to several business days.<a href="#appendix-A.5-1" class="pilcrow">¶</a></p>
-<p id="appendix-A.5-2">The client sends a token request with <code>deferrable=true</code>. The
+<p id="appendix-A.5-2">The client sends a token request with <code>completion_mode=deferred</code>. The
 authorization server, recognizing that the requested scope is under
 IGA control, opens a request in the governance system, returns a
 deferred response, and notifies the relevant approvers through their
