@@ -5,10 +5,10 @@
 Network Working Group                                      F.K. Jacobsen
 Internet-Draft                                                     Idura
 Intended status: Standards Track                    G. de Oliveira Niero
-Expires: 24 December 2026                                           Itaú
+Expires: 25 December 2026                                           Itaú
                                                                M. Gerber
                                                                   Twilio
-                                                            22 June 2026
+                                                            23 June 2026
 
 
                         Deferred Token Response
@@ -55,7 +55,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 24 December 2026.
+   This Internet-Draft will expire on 25 December 2026.
 
 Copyright Notice
 
@@ -1122,13 +1122,12 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
    An authorization server may rely on one or more external services to
    resolve a deferred request — for example, an identity verification
    vendor, a fraud analysis system, a human review queue, or an
-   enterprise governance platform.  The trust relationship between the
-   authorization server and any such service is bilateral and
-   established out of band; this specification does not define or
-   constrain it.  From the client's perspective the authorization server
-   remains the sole counterparty: the client has no direct relationship
-   with, and need not be aware of, any external service involved in
-   resolving the deferred request.
+   enterprise governance platform.  This specification does not define
+   or constrain the trust relationship between the authorization server
+   and any such service.  From the client's perspective the
+   authorization server remains the sole counterparty: the client has no
+   direct relationship with, and need not be aware of, any external
+   service involved in resolving the deferred request.
 
 9.  Relationship to Other Specifications
 
