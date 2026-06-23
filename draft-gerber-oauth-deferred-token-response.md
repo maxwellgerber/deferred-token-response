@@ -1174,9 +1174,12 @@ The following considerations are specific to this specification.
 ## Sender-Constraint Requirements {#sender-constraint-requirements}
 
 Deferral codes have lifetimes that may extend for hours or days. Over
-that window, possession alone confers the right to retrieve the
-eventual access token. To prevent the substitution attacks this
-implies, deferral codes are sender-constrained.
+that window, a stolen deferral code combined with compromised client
+credentials would allow an attacker to retrieve the eventual access
+token. Sender-constraining provides a defense-in-depth layer: even if
+both the deferral code and the client credentials are exposed, the
+attacker cannot redeem the code without the bound DPoP private key or
+mTLS certificate.
 
 A client that is a public client per {{Section 2.1 of OAUTH-2.1}}, or
 that is using an originating grant whose security profile mandates
@@ -1333,8 +1336,8 @@ issue an access token. This is the deferred-grant analogue of
 
 ## Logging and Disposal of Deferral Codes
 
-A deferral code is a bearer-equivalent credential for the duration
-of `expires_in`. Authorization servers and clients MUST NOT log
+A deferral code carries the same sensitivity as a refresh token for
+the duration of `expires_in`. Authorization servers and clients MUST NOT log
 deferral code values in plaintext beyond the code's lifetime, and
 SHOULD treat them as secrets equivalent to refresh tokens with
 respect to log redaction, transport security, and at-rest storage.
