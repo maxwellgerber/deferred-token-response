@@ -1646,13 +1646,22 @@ future extension — the client <span class="bcp14">MAY</span> additionally send
 <code>completion_mode=deferred</code> on that preceding request as an advance hint
 to the authorization server. The semantics of the hint are defined in
 <a href="#pre-token-hints" class="auto internal xref">Section 4.2</a>.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
-<p id="section-4.1-4">A client <span class="bcp14">MAY</span> discover authorization server support for this
+<p id="section-4.1-4">Authorization servers that publish Authorization Server Metadata <span>[<a href="#RFC8414" class="cite xref">RFC8414</a>]</span> <span class="bcp14">MUST</span> include the following property to signal support for deferred token responses as described in this specification:<a href="#section-4.1-4" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-4.1-5">
+          <dt id="section-4.1-5.1"><code>deferred_token_response_supported</code></dt>
+          <dd style="margin-left: 1.5em" id="section-4.1-5.2">
+            <p id="section-4.1-5.2.1"><span class="bcp14">OPTIONAL</span>. Boolean value specifying whether the the authorization server
+supports the deferred token response defined in this specification.<a href="#section-4.1-5.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+</dl>
+<p id="section-4.1-6">A client <span class="bcp14">MAY</span> discover authorization server support for this
 specification through the <code>deferred_token_response_supported</code>
 authorization server metadata parameter (<a href="#iana-considerations" class="auto internal xref">Section 12</a>). A
 client <span class="bcp14">MAY</span> send <code>completion_mode=deferred</code> to an authorization server
 that does not advertise support; such an authorization server
 <span class="bcp14">SHOULD</span> silently ignore the parameter and complete the request synchronously
-per its originating grant's rules.<a href="#section-4.1-4" class="pilcrow">¶</a></p>
+per its originating grant's rules.<a href="#section-4.1-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="pre-token-hints">
