@@ -1584,5 +1584,5 @@ integrate with the governance system directly.
 {:numbered="false"}
 
 The authors would like to thank the following people for their contributions
-and reviews of this specification: Karl McGuinness
+and reviews of this specification: Karl McGuinness, Mikkel Christensen, Mick Hansen, Vitor Watanabe, Ricardo Pereira
 
