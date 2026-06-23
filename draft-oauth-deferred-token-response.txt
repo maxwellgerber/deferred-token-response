@@ -1699,7 +1699,9 @@ A.5.  Enterprise Identity Governance Approval
 
 Acknowledgments
 
-   TODO acknowledge.
+   The authors would like to thank the following people for their
+   contributions and reviews of this specification: Karl McGuinness,
+   Mikkel Christensen, Mick Hansen, Vitor Watanabe, Ricardo Pereira
 
 Authors' Addresses
 
