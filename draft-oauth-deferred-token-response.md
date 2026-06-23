@@ -146,6 +146,13 @@ makes no such assumption, and supports use cases in which a different
 user, a different system, or no human at all completes the
 authorization decision.
 
+In many of the motivating use cases, the authorization server delegates
+the actual verification or decision to an external service — an identity
+verification vendor, a fraud analysis platform, or a governance system.
+The protocol between the authorization server and any such external
+provider is out of scope for this specification; only the interface
+between the client and the authorization server is defined here.
+
 
 # Conventions and Definitions
 
@@ -1114,6 +1121,17 @@ content.
 The client MAY surface this information to a human operator if
 appropriate. Progress information is informational and the client MUST
 NOT depend on its presence or format.
+
+## Delegation to External Services
+
+An authorization server may rely on one or more external services to
+resolve a deferred request — for example, an identity verification
+vendor, a fraud analysis system, a human review queue, or an enterprise
+governance platform. This specification does not define or constrain the trust relationship between the authorization
+server and any such service. From the client's
+perspective the authorization server remains the sole counterparty: the
+client has no direct relationship with, and need not be aware of, any
+external service involved in resolving the deferred request.
 
 
 # Relationship to Other Specifications
