@@ -1285,6 +1285,9 @@ when one is configured.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3">
                 <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="auto internal xref">8.3</a>.  <a href="#name-progress-information-in-err" class="internal xref">Progress Information in Errors</a></p>
 </li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.4">
+                <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="auto internal xref">8.4</a>.  <a href="#name-delegation-to-external-serv" class="internal xref">Delegation to External Services</a></p>
+</li>
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
@@ -1455,6 +1458,12 @@ end-user who initiated the flow is the party who will approve it; DTR
 makes no such assumption, and supports use cases in which a different
 user, a different system, or no human at all completes the
 authorization decision.<a href="#section-1-6" class="pilcrow">¶</a></p>
+<p id="section-1-7">In many of the motivating use cases, the authorization server delegates
+the actual verification or decision to an external service — an identity
+verification vendor, a fraud analysis platform, or a governance system.
+The protocol between the authorization server and any such external
+provider is out of scope for this specification; only the interface
+between the client and the authorization server is defined here.<a href="#section-1-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="conventions-and-definitions">
@@ -2607,6 +2616,21 @@ expressed as opaque step identifiers (for example,
 content.<a href="#section-8.3-2" class="pilcrow">¶</a></p>
 <p id="section-8.3-3">The client <span class="bcp14">MAY</span> surface this information to a human operator if
 appropriate. Progress information is informational and the client <span class="bcp14">MUST NOT</span> depend on its presence or format.<a href="#section-8.3-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="delegation-to-external-services">
+<section id="section-8.4">
+        <h3 id="name-delegation-to-external-serv">
+<a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-delegation-to-external-serv" class="section-name selfRef">Delegation to External Services</a>
+        </h3>
+<p id="section-8.4-1">An authorization server may rely on one or more external services to
+resolve a deferred request — for example, an identity verification
+vendor, a fraud analysis system, a human review queue, or an enterprise
+governance platform. This specification does not define or constrain the trust relationship between the authorization
+server and any such service. From the client's
+perspective the authorization server remains the sole counterparty: the
+client has no direct relationship with, and need not be aware of, any
+external service involved in resolving the deferred request.<a href="#section-8.4-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>

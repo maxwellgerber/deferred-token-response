@@ -108,6 +108,7 @@ Table of Contents
      8.1.  Polling and Callback Together
      8.2.  Obtaining an Immediate Result Alongside a Deferred Request
      8.3.  Progress Information in Errors
+     8.4.  Delegation to External Services
    9.  Relationship to Other Specifications
      9.1.  Relationship to CIBA
    10. Security Considerations
@@ -189,6 +190,14 @@ Table of Contents
    the party who will approve it; DTR makes no such assumption, and
    supports use cases in which a different user, a different system, or
    no human at all completes the authorization decision.
+
+   In many of the motivating use cases, the authorization server
+   delegates the actual verification or decision to an external service
+   — an identity verification vendor, a fraud analysis platform, or a
+   governance system.  The protocol between the authorization server and
+   any such external provider is out of scope for this specification;
+   only the interface between the client and the authorization server is
+   defined here.
 
 2.  Conventions and Definitions
 
@@ -1117,6 +1126,18 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
    The client MAY surface this information to a human operator if
    appropriate.  Progress information is informational and the client
    MUST NOT depend on its presence or format.
+
+8.4.  Delegation to External Services
+
+   An authorization server may rely on one or more external services to
+   resolve a deferred request — for example, an identity verification
+   vendor, a fraud analysis system, a human review queue, or an
+   enterprise governance platform.  This specification does not define
+   or constrain the trust relationship between the authorization server
+   and any such service.  From the client's perspective the
+   authorization server remains the sole counterparty: the client has no
+   direct relationship with, and need not be aware of, any external
+   service involved in resolving the deferred request.
 
 9.  Relationship to Other Specifications
 
