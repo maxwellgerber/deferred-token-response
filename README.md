@@ -4,10 +4,10 @@
 
 This is the working area for the individual Internet-Draft, "Deferred Token Response".
 
-* [Editor's Copy](https://maxwellgerber.github.io/deferred-token-response/#go.draft-oauth-deferred-token-response.html)
-* [Datatracker Page](https://datatracker.ietf.org/doc/draft-oauth-deferred-token-response)
-* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-oauth-deferred-token-response)
-* [Compare Editor's Copy to Individual Draft](https://maxwellgerber.github.io/deferred-token-response/#go.draft-oauth-deferred-token-response.diff)
+* [Editor's Copy](https://maxwellgerber.github.io/deferred-token-response/#go.draft-gerber-oauth-deferred-token-response.html)
+* [Datatracker Page](https://datatracker.ietf.org/doc/draft-gerber-oauth-deferred-token-response)
+* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-gerber-oauth-deferred-token-response)
+* [Compare Editor's Copy to Individual Draft](https://maxwellgerber.github.io/deferred-token-response/#go.draft-gerber-oauth-deferred-token-response.diff)
 
 
 ## Contributing
