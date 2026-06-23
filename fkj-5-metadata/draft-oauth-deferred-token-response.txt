@@ -339,7 +339,7 @@ Table of Contents
 
    Authorization servers that publish Authorization Server Metadata
    [RFC8414] MUST include the following property to signal support for
-   client metadata documents as described in this specification:
+   deferred token responses as described in this specification:
 
    deferred_token_response_supported  OPTIONAL.  Boolean value
       specifying whether the the authorization server supports the
