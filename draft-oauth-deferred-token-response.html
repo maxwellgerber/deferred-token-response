@@ -1988,10 +1988,9 @@ eventual token response once the deferred request resolves.<a href="#section-5.4
 <p id="section-5.4-2">A deferral code is a sender-constrained, AS-issued credential that
 represents a single pending authorization request. It is not an OAuth
 access token, refresh token, or authorization code, and it confers no
-access to any protected resource. Its sole use is as the
-<code>deferral_code</code> parameter on a polling request to the same
-authorization server's token endpoint, by which the client retrieves
-the eventual token response when the deferred request resolves. See
+access to any protected resource. Its use is strictly limited to
+interacting with the same authorization server regarding the pending
+authorization request it represents. See
 <a href="#token-endpoint-polling" class="auto internal xref">Section 5.5</a>.<a href="#section-5.4-2" class="pilcrow">¶</a></p>
 <p id="section-5.4-3">In addition to the <code>error</code> parameter, the deferred response includes
 the following parameters:<a href="#section-5.4-3" class="pilcrow">¶</a></p>
