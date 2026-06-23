@@ -1121,9 +1121,8 @@ NOT depend on its presence or format.
 An authorization server may rely on one or more external services to
 resolve a deferred request — for example, an identity verification
 vendor, a fraud analysis system, a human review queue, or an enterprise
-governance platform. The trust relationship between the authorization
-server and any such service is bilateral and established out of band;
-this specification does not define or constrain it. From the client's
+governance platform. This specification does not define or constrain the trust relationship between the authorization
+server and any such service. From the client's
 perspective the authorization server remains the sole counterparty: the
 client has no direct relationship with, and need not be aware of, any
 external service involved in resolving the deferred request.
