@@ -523,6 +523,149 @@ authorization code response of {{Section 4.1.2 of OAUTH-2.1}}.
 
 The client processes the response per the originating grant's rules.
 
+## Direct Preceding-Endpoint Deferral {#direct-preceding-endpoint-deferral}
+
+The pre-token-hint model defined above keeps the preceding endpoint's
+response shape unchanged; deferral is decided at the token endpoint.
+This is the default behavior of this specification.
+
+An authorization server MAY also support direct deferral *at* the
+preceding endpoint, in which case the preceding endpoint returns a
+deferred response in place of the originating grant's normal response.
+This is useful for use cases where the authorization decision itself
+must be deferred and issuing the preceding endpoint's normal response
+(for example, an authorization `code`) would commit the authorization
+server to a decision it has not yet made. Examples include front-channel
+step-up requiring an out-of-band approval and deferred ID Token
+issuance where claim verification follows the redirect.
+
+Support for direct preceding-endpoint deferral is OPTIONAL. An
+authorization server signals support through the
+`deferred_authorization_endpoint_supported` Authorization
+Server Metadata parameter ({{iana-considerations}}). Clients that do
+not require front-channel deferral can ignore this section.
+
+### Authorization Endpoint
+
+For the Authorization Code Grant of {{OAUTH-2.1}}, the authorization
+server returns the deferred response through the redirection endpoint
+using the same redirect mechanism it would use for an authorization
+response, including any selected `response_mode` such as `query` or
+`form_post`. The redirect carries the following parameters:
+
+`deferral_code`
+: REQUIRED. The deferral code, as defined in
+  {{token-endpoint-deferred-response}}.
+
+`state`
+: REQUIRED if the authorization request included a `state` parameter.
+  The exact value received from the client.
+
+`expires_in`
+: REQUIRED. The remaining lifetime of the deferral code in seconds.
+
+`interval`
+: OPTIONAL. The minimum number of seconds the client SHOULD wait
+  before submitting the first polling request.
+
+A direct preceding-endpoint deferred response MUST NOT include any
+parameter that would indicate synchronous completion of the originating
+request, including but not limited to the `code` parameter defined by
+{{OAUTH-2.1}} and any parameter defined by a higher-layer profile that
+would indicate synchronous authorization.
+
+Authorization servers SHOULD NOT use `response_mode=fragment` for a
+direct preceding-endpoint deferred response. The fragment component is
+accessible to any script running on the redirect page, exposing the
+`deferral_code` to a substantially broader attack surface than the
+query or `form_post` channels.
+
+Example deferred authorization response delivered as a redirect:
+
+~~~
+HTTP/1.1 302 Found
+Location: https://client.example.org/cb?
+  deferral_code=8d67dc78-7faa-4d41-aabd-67707b374255&
+  state=af0ifjsldkj&
+  expires_in=900
+~~~
+
+### Sender-Constraining {#direct-deferral-sender-constraint}
+
+The `deferral_code` is presented on each polling request until the
+request resolves, following the sender-constraint rules for refresh
+tokens per {{Section 5 of ?RFC9449}}. Its lifetime may extend across
+many polling requests. Sender-constraining is therefore required both
+at the authorization response and on every polling request.
+
+A direct-deferral authorization request MUST include a `code_challenge`
+parameter, and the client MUST present the corresponding `code_verifier`
+on the first polling request as specified in {{pkce-on-first-polling}}.
+This mitigates interception of the authorization response as described
+in {{?RFC7636}}. For public clients this restates
+{{Section 2.1.1 of ?RFC9700}}.
+
+Because `code_verifier` is consumed on the first polling request, each
+subsequent polling request MUST be sender-constrained by:
+
+- client authentication as defined in {{Section 2.4 of OAUTH-2.1}}; or
+- a DPoP proof ({{?RFC9449}}) bound to the `deferral_code` via
+  `dpop_jkt` per {{dpop-binding-on-deferral}}.
+
+A public client MUST include `dpop_jkt` on the direct-deferral
+authorization request. A confidential client MAY use either mechanism.
+
+An authorization server MUST reject with `invalid_request` any
+direct-deferral authorization request that omits `code_challenge`, or
+that omits `dpop_jkt` from a public client.
+
+Rationale is given in {{security-direct-deferral-exposure}}.
+
+### PKCE on the First Polling Request {#pkce-on-first-polling}
+
+When the originating authorization request included a `code_challenge`
+parameter as defined by {{?RFC7636}}, the authorization server MUST
+associate the corresponding `code_challenge` and `code_challenge_method`
+values with the deferral state. PKCE verification cannot occur at the
+authorization endpoint because the client has not yet presented the
+`code_verifier`.
+
+As an exception to the prohibition in {{token-endpoint-polling}} on
+parameters that modify or replace originating-request parameters, the
+first polling request following a direct preceding-endpoint deferred
+response MUST include the `code_verifier` parameter when PKCE was used,
+and the authorization server MUST verify it against the stored
+`code_challenge`. The `code_verifier` MUST NOT be re-presented on
+subsequent polling requests; PKCE verification state is preserved with
+the deferral state after the first polling request. If verification
+fails, the authorization server MUST reject the polling request with
+`invalid_grant` and MUST terminate the deferral.
+
+### DPoP Binding {#dpop-binding-on-deferral}
+
+When the originating authorization request included the `dpop_jkt`
+parameter of {{?RFC9449}}, the authorization server MUST associate the
+JWK thumbprint conveyed in `dpop_jkt` with the deferral state. This
+binds the `deferral_code` to the client's DPoP key without requiring
+the client to present a DPoP proof at the authorization endpoint.
+
+Polling requests carrying a `DPoP` HTTP header MUST be verified against
+the bound thumbprint per {{Section 4 of ?RFC9449}}. The authorization
+server MUST reject polling requests whose DPoP proof key does not match
+the bound thumbprint. This mechanism provides sender-constraining
+continuity for the `deferral_code` across the authorization-to-polling
+transition without introducing a new binding parameter.
+
+### Other Preceding Endpoints
+
+A future profile MAY define direct preceding-endpoint deferral at the
+device authorization endpoint of {{?RFC8628}}, the authorization
+challenge endpoint of {{FIPA}}, or another preceding endpoint, using
+the wire shape appropriate to that endpoint. The general principles
+(no synchronous completion parameter in the deferred response; binding
+of `deferral_code` to the originating request; PKCE-on-first-polling
+where applicable) apply.
+
 ## Token Endpoint — Initial Request {#token-endpoint-initial-request}
 
 The initial token request is the originating grant's token request,
@@ -1208,6 +1351,27 @@ The callback notification path is not authenticated by DPoP; the
 post-callback polling request is the moment of redemption and is
 covered by the rules above.
 
+## Direct Preceding-Endpoint Deferral {#security-direct-deferral-exposure}
+
+Direct preceding-endpoint deferral delivers the `deferral_code` through
+the authorization response, exposing it to the same vectors {{?RFC9700}}
+identifies for authorization codes: browser history, referrer headers,
+and redirection-target access logs. Deferral codes have lifetimes
+materially longer than authorization codes
+({{sender-constraint-requirements}}) and are presented on repeated
+polling requests, so an intercepted `deferral_code` without
+sender-constraint has an impact comparable to an intercepted refresh
+token.
+
+{{direct-deferral-sender-constraint}} therefore:
+
+- REQUIRES PKCE on the authorization request for all clients,
+  extending the public-client PKCE requirement of
+  {{Section 2.1.1 of ?RFC9700}} to confidential clients.
+- REQUIRES either client authentication or DPoP on every polling
+  request, because `code_verifier` is consumed on the first polling
+  request only.
+
 ## Replay and Theft of Deferral Codes
 
 A deferral code is sender-constrained per
@@ -1452,6 +1616,15 @@ defined in {{RFC8414}}:
 - Metadata Name: `deferred_token_response_supported`
 - Metadata Description: Boolean. If `true`, the authorization server
   supports the deferred token response defined in this specification.
+- Change Controller: IETF
+- Specification Document(s): this specification
+
+- Metadata Name: `deferred_authorization_endpoint_supported`
+- Metadata Description: Boolean. If `true`, the authorization server
+  supports direct deferral at the authorization endpoint as defined in
+  {{direct-preceding-endpoint-deferral}}. If omitted, the default value
+  is `false` and the authorization endpoint behaves per the pre-token-hint
+  model.
 - Change Controller: IETF
 - Specification Document(s): this specification
 
