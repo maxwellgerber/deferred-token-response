@@ -64,6 +64,9 @@ informative:
   RFC6749:
   ID-JAG: I-D.draft-ietf-oauth-identity-assertion-authz-grant
   FIPA: I-D.draft-ietf-oauth-first-party-apps
+  OIDC-CORE:
+    target: https://openid.net/specs/openid-connect-core-1_0.html
+    title: OpenID Connect Core 1.0
   CIBA:
     target: https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html
     title: OpenID Connect Client-Initiated Backchannel Authentication Flow - Core 1.0
@@ -650,6 +653,28 @@ deferral code.
 {{Section 5.2 of OAUTH-2.1}}, subject to the data-minimization rules
 of {{progress-information-in-errors}}.
 
+`interaction_uri` {#interaction-uri}
+: OPTIONAL on initial deferred responses and on polling responses
+carrying `authorization_pending`. REQUIRED on responses carrying
+`interaction_required` ({{interaction-required-error}}). When present,
+the value MUST be an HTTPS URI, MUST NOT contain a fragment component,
+and identifies a location where external interaction associated with
+the deferred request can take place.
+
+  This specification does not define the semantics of the interaction.
+  Higher-layer profiles MAY constrain the URI's origin, define the
+  interaction protocol, or attach additional context. The
+  authorization server MUST bind the `interaction_uri` to the
+  associated deferral state; accessing the URI MUST NOT by itself
+  authorize the originating request or complete the deferred
+  processing. Completion occurs only when the authorization server
+  updates the deferral state per its own rules.
+
+  The authorization server MUST make `interaction_uri` values
+  single-use or otherwise resistant to replay, and MUST limit their
+  lifetime to no longer than the lifetime of the associated deferral
+  code. Clients MUST treat the value as opaque.
+
 Example:
 
 ~~~
@@ -660,6 +685,25 @@ Cache-Control: no-store
 {
   "error": "authorization_pending",
   "deferral_code": "8d67dc78-7faa-4d41-aabd-67707b374255",
+  "expires_in": 10800,
+  "interval": 60
+}
+~~~
+
+A deferred response that is waiting on external interaction is returned
+with the `interaction_required` error code and an `interaction_uri`
+parameter:
+
+~~~
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+Cache-Control: no-store
+
+{
+  "error": "interaction_required",
+  "deferral_code": "8d67dc78-7faa-4d41-aabd-67707b374255",
+  "interaction_uri":
+    "https://as.example.com/interact/8d67dc78-7faa-4d41-aabd-67707b374255",
   "expires_in": 10800,
   "interval": 60
 }
@@ -797,13 +841,35 @@ this specification uses the following error codes, with semantics
 aligned with the corresponding codes in {{Section 3.5 of RFC8628}}:
 
 `authorization_pending`
-: The request has not yet resolved. On the initial token request, this
-  is the deferred response of {{token-endpoint-deferred-response}}, which
-  establishes the `deferral_code` and carries `expires_in` and
-  `interval`. On a subsequent polling request, it indicates the deferred
-  request is still pending; such responses reference the established
+: The request has not yet resolved and is not waiting on external
+  interaction. On the initial token request, this is the deferred
+  response of {{token-endpoint-deferred-response}}, which establishes
+  the `deferral_code` and carries `expires_in` and `interval`. On a
+  subsequent polling request, it indicates the deferred request is
+  still pending; such responses reference the established
   `deferral_code` and do not repeat it. In either case the client
   SHOULD continue polling at the rate established by `interval`.
+
+`interaction_required` {#interaction-required-error}
+: The deferred request is pending and cannot continue until external
+  interaction associated with the request occurs. The response MUST
+  include an `interaction_uri` parameter ({{interaction-uri}}) that
+  identifies a location where the interaction can take place. A client
+  receiving this response SHOULD present the `interaction_uri` to the
+  user (or other external actor) as appropriate for the application
+  and continues polling at the rate established by `interval`.
+
+  Transitions between `authorization_pending` and `interaction_required`
+  MAY occur in either direction during the lifetime of a deferred
+  request; both are non-terminal pending states observed externally
+  through the polling state machine.
+
+  This specification uses the `interaction_required` error code with
+  the token endpoint semantics defined here. The error name is
+  registered in the OAuth Extensions Error Registry by {{OIDC-CORE}}
+  for authorization endpoint use; the IANA action in
+  {{iana-considerations}} updates that registration to add token
+  endpoint response usage.
 
 `slow_down`
 : The client is polling faster than `interval` allows. The client MUST
@@ -1379,11 +1445,16 @@ Final values for `Reference` are this RFC once published.
 
 ## OAuth Parameters Registration
 
-This specification requests registration of the following parameter in
-the IANA "OAuth Parameters" registry:
+This specification requests registration of the following parameters
+in the IANA "OAuth Parameters" registry:
 
 - Parameter name: `completion_mode`
 - Parameter usage location: authorization request, token request
+- Change Controller: IETF
+- Specification Document(s): this specification
+
+- Parameter name: `interaction_uri`
+- Parameter usage location: token response
 - Change Controller: IETF
 - Specification Document(s): this specification
 
@@ -1477,6 +1548,23 @@ IANA "OAuth URI" registry:
 - Common Name: Deferred Token Response Polling Grant
 - Change Controller: IETF
 - Specification Document(s): this specification
+
+## OAuth Extensions Error Registry
+
+This specification updates the existing `interaction_required`
+registration in the IANA "OAuth Extensions Error Registry" defined by
+{{RFC6749}}. That error name was originally registered by {{OIDC-CORE}}
+for authorization endpoint use. This specification adds token endpoint
+response usage for the deferred-pending state defined in
+{{interaction-required-error}}.
+
+- Error name: `interaction_required`
+- Error usage location: authorization endpoint response, token endpoint
+  response
+- Related protocol extension: OpenID Connect; deferred token response
+- Change controller: OpenID Foundation Artifact Binding Working Group;
+  IETF for token endpoint response usage defined by this specification
+- Specification document(s): OpenID Connect Core 1.0; this specification
 
 --- back
 
