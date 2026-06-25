@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-23T02:12:03.446513+00:00",
+  "timestamp": "2026-06-25T02:14:04.914943+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -92,7 +92,7 @@
       ],
       "body": "The polling request only includes the `deferral_token` and the polling grant type:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L669-L700\n\nAnd the polling validation steps don't re-enforce any of the originating grant's parameters like scope, `redirect_uri` or any OIDC params:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L702-L720\n\nTwo AS implementations can diverge on what is frozen vs. recomputed at resolution time. One could choose to e.g. snapshot `scope` at issuance, another re-evaluates current policy at the end and downscopes.\n\nI think we should state explicitly that the AS MUST snapshot the parameters that influence the eventual access token (scope, `redirect_uri`, any OIDC params, etc.) and MUST issue the eventual access token under that snapshot.\nBut it might be that your use cases are different, so I'm interested in discussing if it would be useful to be more lenient.",
       "createdAt": "2026-05-21T10:02:14Z",
-      "updatedAt": "2026-05-26T21:00:42Z",
+      "updatedAt": "2026-06-23T10:41:00Z",
       "closedAt": null,
       "comments": [
         {
@@ -101,6 +101,13 @@
           "body": "> AS MUST snapshot the parameters that influence the eventual access token (scope, redirect_uri, any OIDC params, etc.)\n\nAgreed, though I don't know if this is something that can be written normatively or is better as an implementation consideration.\n\n> MUST issue the eventual access token under that snapshot.\n\nNot sure if I agree on this one. The AS should be able to incorporate the results of the long-lived task into the access token itself. For example, if not all scopes were approved, additional downscoping can occur during the deferral.",
           "createdAt": "2026-05-26T21:00:42Z",
           "updatedAt": "2026-05-26T21:00:42Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This would be a good discussion point for IETF I think.",
+          "createdAt": "2026-06-23T10:41:00Z",
+          "updatedAt": "2026-06-23T10:41:00Z"
         }
       ]
     },
@@ -158,7 +165,7 @@
       ],
       "body": "For OIDC originating grants, ID Token claims can be captured at the originating authorize moment but the token is issued much later. This could cause trouble e.g. with `max_age` and `auth_time` in particular.\n\nWe should consider adding an \"Interaction with OpenID Connect\" appendix and consider whether we should:\n1. State that ID Token claims reflect the originating authorization moment,\n2. State that ID Token claims reflect the actual user authentication moment, or\n3. Allow both options",
       "createdAt": "2026-05-21T10:53:27Z",
-      "updatedAt": "2026-06-22T20:13:04Z",
+      "updatedAt": "2026-06-23T10:39:40Z",
       "closedAt": null,
       "comments": [
         {
@@ -181,6 +188,20 @@
           "body": "Since the spec allows both authentication or authorization to fit inside the deferral, providing guidance is the only thing that comes into mind. \n\nIn my opinion, I'd use auth_time to specify when the user _authentication_ occurred tand not when user _interaction_ occurred. It is possible to request the authorization endpoint and the end-user may not be explicitly re-authenticated (maybe just a cookie gets validated). Honestly, I don't know if in such cases the auth_time gets updated in most deployments.\n\nI wrote some use cases so we can discuss further:\n\nCase 1: An user provides a password and a photo of its document. An immediate interim ID token would contain amr and/or acr according to the password (that is the only validated challenge so far) and its auth_time, and future requests to token endpoint could produce a new id_token with updated claims when the document gets verified.\n\nCase 2: An user approves a payment transaction with passkey, but the authorization server relies on external verification tool. This process does not check for identity. If no identity is further validated, auth_time should be of the interaction time.\n\nCase 3: An action initiated by an user by typing in a password must be approved by another individual. The client requests DTR and the AS reaches out the other individual (out of scope here) to request approval. The id_token should reflect the user interaction, not the time that second individual acted.",
           "createdAt": "2026-06-22T20:13:04Z",
           "updatedAt": "2026-06-22T20:13:04Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I wrote some use cases so we can discuss further:\n> \n> Case 1: An user provides a password and a photo of its document. An immediate interim ID token would contain amr and/or acr according to the password (that is the only validated challenge so far) and its auth_time, and future requests to token endpoint could produce a new id_token with updated claims when the document gets verified.\n\nI agree that this is the right way to do it in this case.\n\n> Case 2: An user approves a payment transaction with passkey, but the authorization server relies on external verification tool. This process does not check for identity. If no identity is further validated, auth_time should be of the interaction time.\n\nI agree.\n\n> Case 3: An action initiated by an user by typing in a password must be approved by another individual. The client requests DTR and the AS reaches out the other individual (out of scope here) to request approval. The id_token should reflect the user interaction, not the time that second individual acted.\n\nThis one is kind of harder to manage, because it could be that the other person also had some user interaction. But probably the best thing to do is what you suggest. In general I think you would need something like the OIDC4AC idea that extends the `amr` claim if you care about the exact details here.",
+          "createdAt": "2026-06-23T10:39:06Z",
+          "updatedAt": "2026-06-23T10:39:06Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I don't think we need to solve this one before submitting the initial IETF draft. It could even be a separate spec as we've talked about.",
+          "createdAt": "2026-06-23T10:39:40Z",
+          "updatedAt": "2026-06-23T10:39:40Z"
         }
       ]
     },
@@ -189,7 +210,7 @@
       "id": "I_kwDOSeoW_M8AAAABC9wybQ",
       "title": "Discovery / opt-in in metadata",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/5",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "fkj",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -198,8 +219,8 @@
       ],
       "body": "The current discovery text suggests a non-supporting AS will silently ignore `deferrable=true`, but provides no normative MUST that a DTR-supporting AS publishes `deferred_token_response_supported=true` itself:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L287-L294\n\nI think we should say the AS MUST publish this.\n\nThe metadata also doesn't say which originating grants DTR is offered for, which we might want to consider doing.",
       "createdAt": "2026-05-21T10:57:01Z",
-      "updatedAt": "2026-06-03T12:14:04Z",
-      "closedAt": null,
+      "updatedAt": "2026-06-23T13:26:43Z",
+      "closedAt": "2026-06-23T13:26:43Z",
       "comments": [
         {
           "author": "maxwellgerber",
@@ -222,7 +243,7 @@
       "id": "I_kwDOSeoW_M8AAAABC9xxCw",
       "title": "Mention that communication with any third-party approver/authenticator is out of scope",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/6",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "fkj",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -231,8 +252,8 @@
       ],
       "body": "AS could use some other provider/service/integration to actually do the authentication.\nWe should briefly mention the trust relationship there, but otherwise say anything about their protocol is out of scope.",
       "createdAt": "2026-05-21T10:59:27Z",
-      "updatedAt": "2026-05-21T10:59:27Z",
-      "closedAt": null,
+      "updatedAt": "2026-06-23T13:31:25Z",
+      "closedAt": "2026-06-23T13:31:25Z",
       "comments": []
     },
     {
@@ -405,16 +426,24 @@
       ],
       "body": "\u00a77 forbids PII in progress strings but the example value encodes the review category, which is then visible to anyone reading polling responses or downstream logs:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1036-L1054\n\nWe should add a privacy consideration that even the step name here might be sensitive depending on the process.\nI think we should also change the example to be more opaque (e.g. just \"in_review).",
       "createdAt": "2026-05-22T09:32:40Z",
-      "updatedAt": "2026-05-22T09:32:40Z",
+      "updatedAt": "2026-06-23T13:02:03Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Since the AS controls the authorization flow on a per-request basis, exposing its internal steps to the client could lead implementers to guess at the flow's progress, present inaccurate feedback, or even influence the user's decision. \n\nI think we could probably extend this feedback in interim id_tokens, under a profile.",
+          "createdAt": "2026-06-23T13:01:05Z",
+          "updatedAt": "2026-06-23T13:02:03Z"
+        }
+      ]
     },
     {
       "number": 15,
       "id": "I_kwDOSeoW_M8AAAABDFBTUQ",
       "title": "Interaction with introspection endpoint",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/15",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "fkj",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -423,8 +452,8 @@
       ],
       "body": "RFC 7662 only talks about access tokens. We should consider what an introspection endpoint should return for a deferral token (if anything).\nProbably the AS SHOULD return `active=false` if a deferral token is submitted.",
       "createdAt": "2026-05-22T09:33:54Z",
-      "updatedAt": "2026-06-03T11:56:17Z",
-      "closedAt": null,
+      "updatedAt": "2026-06-23T12:48:34Z",
+      "closedAt": "2026-06-23T12:48:34Z",
       "comments": [
         {
           "author": "maxwellgerber",
@@ -439,6 +468,20 @@
           "body": "I agree. I think we should call out the why explicitly though. Maybe just in considerations.",
           "createdAt": "2026-06-03T11:56:17Z",
           "updatedAt": "2026-06-03T11:56:17Z"
+        },
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Since we renamed `deferral_token` to `deferral_code`, it's now clearer that introspection is not applicable",
+          "createdAt": "2026-06-23T11:10:57Z",
+          "updatedAt": "2026-06-23T11:10:57Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I agree with @gniero and will close this.",
+          "createdAt": "2026-06-23T12:48:23Z",
+          "updatedAt": "2026-06-23T12:48:23Z"
         }
       ]
     },
@@ -536,9 +579,17 @@
       ],
       "body": "The `authorization_pending` SHOULD continue polling without any explanation for when it might choose not to:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L767-L769\n\nClients SHOULD bind the deferral token with DPoP. We state the threat (long lifetimes) but not why it's allowed not to do it:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1109\n\n`slow_down` SHOULD (I think this can be a MUST):\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1147-L1150\n\nSHOULD re-resolve (to avoid SSRF?):\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1197-L1201\n\nClients SHOULD avoid embedding distinguishing information (also this is in a potentially non-normative section):\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1279-L1280\n\nSHOULD retain only necessary and dispose at resolution (also this is in a potentially non-normative section):\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1287-L1290",
       "createdAt": "2026-05-22T09:45:25Z",
-      "updatedAt": "2026-05-22T09:45:25Z",
+      "updatedAt": "2026-06-23T10:57:01Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "We should consider this, but not a big deal before first draft.",
+          "createdAt": "2026-06-23T10:57:01Z",
+          "updatedAt": "2026-06-23T10:57:01Z"
+        }
+      ]
     },
     {
       "number": 21,
@@ -641,9 +692,17 @@
       ],
       "body": "We write: \"MUST present a DPoP proof on the initial token request that yields a deferred response\":\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1101-L1109\n\nThis is kind of weird since the AS is the one that chooses whether this will happen or not.\nI think it would be clearer to write:\n> \"A public client MUST present a DPoP proof on any initial token request with `deferrable=true`, since sending that parameter allows the authorization server to defer the request.\"",
       "createdAt": "2026-05-22T10:27:43Z",
-      "updatedAt": "2026-05-22T10:27:43Z",
+      "updatedAt": "2026-06-23T12:37:20Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "We write \"posession alone\": https://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L1097-L1098\n\nBut we provide an example where a client is authenticating to poll:\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L693-L699\n\nWe should make it clearer where this situation happens, which would be public clients without DPoP",
+          "createdAt": "2026-06-23T12:36:56Z",
+          "updatedAt": "2026-06-23T12:37:20Z"
+        }
+      ]
     },
     {
       "number": 26,
@@ -683,14 +742,78 @@
       "id": "I_kwDOSeoW_M8AAAABGU3CnQ",
       "title": "Sole Use of Deferred Token (code)",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/39",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "gniero",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "We can actually use it in revocation, so we should adjust wording\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/e6f6ac9336666c8a3d1737c8377160c89f80f233/draft-oauth-deferred-token-response.md?plain=1#L595-L598",
       "createdAt": "2026-06-22T18:29:56Z",
-      "updatedAt": "2026-06-22T22:03:02Z",
+      "updatedAt": "2026-06-23T13:28:10Z",
+      "closedAt": "2026-06-23T13:28:10Z",
+      "comments": []
+    },
+    {
+      "number": 42,
+      "id": "I_kwDOSeoW_M8AAAABGa4rzA",
+      "title": "Deferral code as bearer-equivalent",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/42",
+      "state": "OPEN",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "In \u00a710.8 we say that `deferral_token` (now `deferral_code`) is a bearer-equivalent credential\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/e6f6ac9336666c8a3d1737c8377160c89f80f233/draft-oauth-deferred-token-response.md?plain=1#L1310-L1314\n\nIt is true only for requests initiated by public clients without DPoP. Confidential clients must authenticate with its own credentials, and public clients with DPoP will count on another security layer. \n\nFor the rest of the recommendation, no objection.\n\nThis relates to the discussion in #25",
+      "createdAt": "2026-06-23T12:27:08Z",
+      "updatedAt": "2026-06-23T13:05:04Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 44,
+      "id": "I_kwDOSeoW_M8AAAABGg29qA",
+      "title": "Make the substrate contract for higher-layer profiles explicit",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/44",
+      "state": "OPEN",
+      "author": "mcguinness",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "## Problem\n\nDTR is positioned as a foundation that higher-layer profiles can build on, but the substrate's contract with those profiles is implicit. The guarantees an authorization server provides (e.g., that polling remains available, that the continuation handle is opaque, that authorization cannot be expanded after deferral) and the obligations a profile MUST preserve when extending the spec (e.g., state distinguishability, narrowing-only parameter updates) are scattered across \u00a74, \u00a75, and \u00a79 rather than stated together.\n\nConsequences:\n\n- Profile authors re-derive the contract from scattered SHOULDs and MUSTs.\n- Different profiles can interpret the same substrate behavior differently.\n- Reviewers have no single anchor for evaluating profile drafts against the substrate.\n\n## Solution shape\n\nA single section that names the substrate's guarantees and the obligations on extending profiles, in one place. Constraints:\n\n- Restates obligations already implied elsewhere; does not introduce new normative wire content.\n- Doesn't change existing sections; pure addition.\n- No new IANA actions, no new parameters.\n- Located where readers encounter it before the wire-shape sections.\n\n## Plan\n\nPR to follow.",
+      "createdAt": "2026-06-24T05:51:39Z",
+      "updatedAt": "2026-06-24T05:51:39Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 46,
+      "id": "I_kwDOSeoW_M8AAAABGg31Ng",
+      "title": "Allow the preceding endpoint to return a deferred response directly, in addition to accepting an advance hint",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/46",
+      "state": "OPEN",
+      "author": "mcguinness",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "## Problem\n\nToday, when an authorization server defers a request for a grant that has a preceding endpoint, the preceding endpoint always returns its normal response (typically an authorization code), and the deferral decision is observed only at the token endpoint. `completion_mode=deferred` on the preceding request is a hint that influences the AS's later behavior but does not change the preceding endpoint's response shape.\n\nThis is correct for cases where the deferral is downstream of the preceding endpoint's normal operation. It is awkward for cases where the *authorization decision itself* is what is deferred:\n\n- Front-channel step-up where the AS cannot decide whether to authorize until an out-of-band approval completes.\n- Deferred ID Token issuance where claim verification follows the redirect.\n\nIn those cases, issuing an authorization code commits the AS to a decision it has not yet made. The code is later either redeemed against a deferred outcome (which works but is semantically odd) or unused (which leaks a credential).\n\n## Solution shape\n\nAn OPTIONAL extension that lets the preceding endpoint return a deferred response directly, in place of the originating grant's normal response. Constraints:\n\n- OPTIONAL. Authorization servers MUST be able to ignore the extension entirely and use the existing hint-only model. Discoverable via authorization server metadata.\n- Does not change the default behavior of the preceding endpoint or the hint mechanism currently in \u00a74.2.\n- Preserves the substrate's invariants (continuation through the token endpoint, sender-constraining continuity, polling availability).\n- Defines the wire shape only for the authorization endpoint in this iteration; other preceding endpoints (device, FIPA) can be addressed in follow-up profiles.\n- Includes the PKCE handshake for public clients that need to defer at the authorization endpoint (verifier presented on the first polling request, not on subsequent ones).\n\n## Plan\n\nPR to follow.",
+      "createdAt": "2026-06-24T05:54:52Z",
+      "updatedAt": "2026-06-24T05:54:52Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 48,
+      "id": "I_kwDOSeoW_M8AAAABGg5kyw",
+      "title": "Add a polling-state vocabulary for \"waiting on external interaction\"",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/48",
+      "state": "OPEN",
+      "author": "mcguinness",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "## Problem\n\nThe current draft has a single non-terminal pending state, `authorization_pending`, covering every case where a deferred request has not yet resolved. That includes both:\n\n- Cases where the AS is waiting on automation (policy evaluation, attestation validation, risk analysis), and\n- Cases where the AS is waiting on external interaction by a human (manager approval, document upload, step-up authentication).\n\nA client receiving `authorization_pending` cannot tell which is happening and has no protocol-level way to surface an interaction URI to a user when one is needed. Profiles that need to convey \"an actor outside the polling client must do something\" either invent their own state vocabulary (fragmenting the substrate's state machine) or piggyback information into `error_description` (which is subject to data-minimization rules and not machine-readable).\n\nOpenID Connect's `interaction_required` error code, registered in the OAuth Extensions Error Registry, already names this concept for the authorization endpoint. There is no token-endpoint analog today.\n\n## Solution shape\n\nA second non-terminal pending state in the polling state machine, distinguishable from `authorization_pending`, that signals \"the deferred request is waiting on external interaction\" and carries a URI identifying where the interaction can take place. Constraints:\n\n- Reuses the existing `interaction_required` error name (already in the OAuth Extensions Error Registry); IANA action is a registration update to add token-endpoint usage.\n- New response parameter (`interaction_uri`) registered in the OAuth Parameters Registry.\n- Substrate-level vocabulary: the AS MAY transition between `authorization_pending` and `interaction_required` in either direction during a deferred request's lifetime; polling continues at the established `interval` in both.\n- Client behavior is non-prescriptive: a client SHOULD present the `interaction_uri` to the user when appropriate but is not required to dereference or embed it.\n- Does not change DTR's wire-shape or sender-constraining model.\n\n## Plan\n\nPR to follow.",
+      "createdAt": "2026-06-24T06:01:04Z",
+      "updatedAt": "2026-06-24T06:01:04Z",
       "closedAt": null,
       "comments": []
     }
@@ -1298,24 +1421,26 @@
       "id": "PR_kwDOSeoW_M7pStN9",
       "title": "Rename deferral_token to deferral_code throughout the spec",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/35",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "maxwellgerber",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "Renames the parameter, prose term, and URN component from deferral_token/deferral-token/deferral token to\r\ndeferral_code/deferral-code/deferral code. The spec title \"Deferred Token Response\" is unchanged.",
       "createdAt": "2026-06-22T17:24:47Z",
-      "updatedAt": "2026-06-22T19:32:34Z",
+      "updatedAt": "2026-06-23T13:25:13Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "e6f6ac9336666c8a3d1737c8377160c89f80f233",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "rename-deferral-token-to-deferral-code",
       "headRefOid": "f165d0a79bbbe126319b5ec7f594df6105670558",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-06-23T13:25:13Z",
+      "mergedAt": "2026-06-23T13:25:13Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "8821f9f00af75d6ef7efe432efc76a74bf5f114f"
+      },
       "comments": [],
       "reviews": [
         {
@@ -1409,6 +1534,19 @@
               "updatedAt": "2026-06-22T19:32:19Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABD0Nvwg",
+          "commit": {
+            "abbreviatedOid": "f165d0a"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-06-23T07:43:04Z",
+          "updatedAt": "2026-06-23T07:43:04Z",
+          "comments": []
         }
       ]
     },
@@ -1417,46 +1555,290 @@
       "id": "PR_kwDOSeoW_M7pS1YQ",
       "title": "Update frontmatter: add keywords, uncomment WG metadata",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/36",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "maxwellgerber",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "- Replace placeholder keywords with relevant terms\r\n- Uncomment area, workgroup, and mailing list archive fields",
       "createdAt": "2026-06-22T17:30:01Z",
-      "updatedAt": "2026-06-22T17:30:02Z",
+      "updatedAt": "2026-06-23T13:24:53Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "e6f6ac9336666c8a3d1737c8377160c89f80f233",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "update-frontmatter",
       "headRefOid": "ffd83f19f1f151c2b9c215beed006f8d2163d06d",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-06-23T13:24:53Z",
+      "mergedAt": "2026-06-23T13:24:53Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "c67b5a1e740afb0974b9f422ad1130fd83280e39"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABD0JENA",
+          "commit": {
+            "abbreviatedOid": "ffd83f1"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-06-23T07:30:28Z",
+          "updatedAt": "2026-06-23T07:30:28Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 37,
       "id": "PR_kwDOSeoW_M7pTHTH",
       "title": "Add acknowledgments section",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/37",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "maxwellgerber",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-06-22T17:41:14Z",
-      "updatedAt": "2026-06-22T17:41:15Z",
+      "updatedAt": "2026-06-23T13:26:06Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "e6f6ac9336666c8a3d1737c8377160c89f80f233",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "add-acknowledgments",
-      "headRefOid": "52cc465b03f9a53484ac577f40bb3b4615039fa5",
+      "headRefOid": "582dd0f76901f4d3dc98d8af8bf5b5a74184383f",
+      "closedAt": "2026-06-23T13:26:06Z",
+      "mergedAt": "2026-06-23T13:26:06Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "abe6df9eb7c9fb2001840df16f02b15bba992b91"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABD1VJtA",
+          "commit": {
+            "abbreviatedOid": "52cc465"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-23T10:20:11Z",
+          "updatedAt": "2026-06-23T10:20:16Z",
+          "comments": [
+            {
+              "originalPosition": 6,
+              "body": "Other people who've reviewed our earlier draft:\n```suggestion\nand reviews of this specification: Karl McGuinness, Mikkel Christensen, Mick Hansen, Vitor Watanabe, Ricardo Pereira\n```",
+              "createdAt": "2026-06-23T10:20:11Z",
+              "updatedAt": "2026-06-23T10:20:16Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 38,
+      "id": "PR_kwDOSeoW_M7pTXsV",
+      "title": "Add guidance on AS delegation to external services",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/38",
+      "state": "MERGED",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #6",
+      "createdAt": "2026-06-22T17:52:58Z",
+      "updatedAt": "2026-06-23T13:31:24Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "e6f6ac9336666c8a3d1737c8377160c89f80f233",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "add-delegation-to-external-services",
+      "headRefOid": "7dc4e6b089b865a99daffb9325e6f8bd5051bef1",
+      "closedAt": "2026-06-23T13:31:24Z",
+      "mergedAt": "2026-06-23T13:31:24Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "9c84ce96f2f5eb907c335f98441d55bf81f7986b"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABD0MKJg",
+          "commit": {
+            "abbreviatedOid": "3a4f7fe"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "Might not be necessary to have that much detail in the beginning?",
+          "createdAt": "2026-06-23T07:39:02Z",
+          "updatedAt": "2026-06-23T07:39:24Z",
+          "comments": [
+            {
+              "originalPosition": 24,
+              "body": "I don't think we should mention bilateral or any other detail here. We should just say it's completely out of scope.",
+              "createdAt": "2026-06-23T07:39:02Z",
+              "updatedAt": "2026-06-23T07:39:24Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABD2vUAA",
+          "commit": {
+            "abbreviatedOid": "3a4f7fe"
+          },
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-23T13:26:15Z",
+          "updatedAt": "2026-06-23T13:26:15Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "```suggestion\ngovernance platform. This specification does not define or constrain the trust relationship between the authorization\nserver and any such service. From the client's\n```\nWhat do you think of this simpler approach?",
+              "createdAt": "2026-06-23T13:26:15Z",
+              "updatedAt": "2026-06-23T13:26:44Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 40,
+      "id": "PR_kwDOSeoW_M7pmzlg",
+      "title": "Add MUST for AS metadata.",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/40",
+      "state": "MERGED",
+      "author": "fkj",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #5.",
+      "createdAt": "2026-06-23T10:55:32Z",
+      "updatedAt": "2026-06-23T13:26:42Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "e6f6ac9336666c8a3d1737c8377160c89f80f233",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "fkj-5-metadata",
+      "headRefOid": "63cc034c04fdc6181adbbc2616f1950802fd068b",
+      "closedAt": "2026-06-23T13:26:42Z",
+      "mergedAt": "2026-06-23T13:26:42Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "5b16bd876a11d8fa84782573dddeb50536653fbe"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABD2DT-A",
+          "commit": {
+            "abbreviatedOid": "63cc034"
+          },
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Spotless \ud83d\udc4c",
+          "createdAt": "2026-06-23T11:59:10Z",
+          "updatedAt": "2026-06-23T11:59:10Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABD2vfYg",
+          "commit": {
+            "abbreviatedOid": "63cc034"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-06-23T13:26:35Z",
+          "updatedAt": "2026-06-23T13:26:35Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 41,
+      "id": "PR_kwDOSeoW_M7poHft",
+      "title": "Update deferral code usage in endpoints",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/41",
+      "state": "MERGED",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "We write in the spec that the `deferral_token` (now `deferral_code`) could only be used in the `/token` endpoint, but we can use it in the revocation endpoint as well. This is a suggestion to clarify the boundaries, but not clearly mentioning the endpoints in this section.\r\nCloses #39 ",
+      "createdAt": "2026-06-23T11:50:21Z",
+      "updatedAt": "2026-06-23T13:28:09Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "5b16bd876a11d8fa84782573dddeb50536653fbe",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "deferral-code-usage",
+      "headRefOid": "60c75b422100d56959aee7e8f2cd6fb7a3c4db9d",
+      "closedAt": "2026-06-23T13:28:09Z",
+      "mergedAt": "2026-06-23T13:28:09Z",
+      "mergedBy": "maxwellgerber",
+      "mergeCommit": {
+        "oid": "93a031c8a4d2a00b72bbb6a317ed77aa3b665e57"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABD2c1Bw",
+          "commit": {
+            "abbreviatedOid": "1a88480"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Works for me.",
+          "createdAt": "2026-06-23T12:50:14Z",
+          "updatedAt": "2026-06-23T12:50:14Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABD2vueg",
+          "commit": {
+            "abbreviatedOid": "1a88480"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-06-23T13:27:04Z",
+          "updatedAt": "2026-06-23T13:27:04Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 43,
+      "id": "PR_kwDOSeoW_M7p0b79",
+      "title": "Rephrase considerations on deferred code sensitivity",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/43",
+      "state": "OPEN",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "We've got issues #25 and #42 that relates to client authentication and code protection. This proposes rephrasing some sentences that don't consider sender-constrained codes.",
+      "createdAt": "2026-06-23T20:15:19Z",
+      "updatedAt": "2026-06-24T10:04:46Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "gniero-code-sensitivity",
+      "headRefOid": "f854f671ba5f105d734dd9a352306758f01fb814",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -1465,24 +1847,76 @@
       "reviews": []
     },
     {
-      "number": 38,
-      "id": "PR_kwDOSeoW_M7pTXsV",
-      "title": "Add guidance on AS delegation to external services",
-      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/38",
+      "number": 45,
+      "id": "PR_kwDOSeoW_M7p9zP4",
+      "title": "Add Substrate Invariants section",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/45",
       "state": "OPEN",
-      "author": "maxwellgerber",
-      "authorAssociation": "OWNER",
+      "author": "mcguinness",
+      "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
-      "body": "Closes #6",
-      "createdAt": "2026-06-22T17:52:58Z",
-      "updatedAt": "2026-06-22T17:52:58Z",
+      "body": "Resolves #44.\n\nAdds a new `# Substrate Invariants` section positioned after `# Overview` and before `# Client Opt-In Signaling`. The section has two subsections:\n\n- **Substrate Guarantees** \u2014 six invariants the authorization server provides (no authorization expansion; continuation through the token endpoint; sender-constraining continuity; originating request immutability through the polling grant type; opaque continuation reference; polling is always available as an authoritative completion path).\n- **Profile Obligations** \u2014 three obligations any extending profile MUST satisfy (state distinguishability, narrowing-only parameter updates, no relaxation of guarantees).\n\nPer the issue, the section restates obligations already implied by \u00a74, \u00a75, and \u00a79 rather than introducing new normative wire content. No existing text is modified. No new IANA actions or parameters.\n\n### Files changed\n\n- `draft-gerber-oauth-deferred-token-response.md`: +71 lines, new section after Overview.\n\n### Source\n\nSection adapted from `\u00a7Substrate Invariants` in `draft-mcguinness-oauth-deferred-code-processing`.",
+      "createdAt": "2026-06-24T05:54:03Z",
+      "updatedAt": "2026-06-24T05:54:03Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
-      "baseRefOid": "e6f6ac9336666c8a3d1737c8377160c89f80f233",
-      "headRepository": "maxwellgerber/deferred-token-response",
-      "headRefName": "add-delegation-to-external-services",
-      "headRefOid": "3a4f7fe086b898cf14ac1eed5e919a32790dd748",
+      "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
+      "headRepository": "mcguinness/deferred-token-response",
+      "headRefName": "issue-44-substrate-invariants",
+      "headRefOid": "9cade39d7cf0262d487a7034c0bcf8a725576c7e",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 47,
+      "id": "PR_kwDOSeoW_M7p94sf",
+      "title": "Add optional direct deferral at the authorization endpoint",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/47",
+      "state": "OPEN",
+      "author": "mcguinness",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Resolves #46.\n\nAdds a new `## Direct Preceding-Endpoint Deferral` subsection under `# The Deferred Authorization Grant`, immediately after `## Pre-Token Response`. The section defines an OPTIONAL extension in which the authorization endpoint returns a deferred response directly (a redirect carrying `deferral_code`) in place of the originating grant's normal response.\n\nThe default behavior (hint-only at the preceding endpoint) is unchanged. Authorization servers that do not support direct deferral can ignore the extension entirely.\n\n### What the section defines\n\n- **When direct deferral applies**: only when the authorization server signals support via the new `deferred_authorization_endpoint_supported` metadata flag.\n- **Wire shape for the authorization endpoint**: the redirect carries `deferral_code`, `state`, `expires_in`, and optionally `interval`, in place of the normal `code` parameter. Uses the same `response_mode` (`query` or `form_post`) the authorization request selected. `response_mode=fragment` SHOULD NOT be used; rationale included.\n- **PKCE on the first polling request**: when the originating authorization request used PKCE, the `code_verifier` is presented on the first polling request (as an exception to the polling-request prohibition on parameters that modify the originating request) and MUST NOT be re-presented on subsequent polling requests.\n- **Public-client requirement**: PKCE is REQUIRED for public clients per RFC 9700.\n- **Other preceding endpoints**: out of scope for this iteration; a future profile can extend the wire shape to the device authorization endpoint of RFC 8628 or the authorization challenge endpoint of FIPA.\n\n### IANA addition\n\n- `deferred_authorization_endpoint_supported`: Boolean AS metadata. Default `false`. When `true`, the AS supports direct deferral at the authorization endpoint.\n\n### Files changed\n\n- `draft-gerber-oauth-deferred-token-response.md`: +112 lines, new subsection plus IANA registration entry.\n\n### Source\n\nAdapted from `\u00a7Authorization Endpoint Extensions` in `draft-mcguinness-oauth-deferred-code-processing`. The metadata parameter name `deferred_authorization_endpoint_supported` is shortened from the source draft's verbose name and is endpoint-specific (the section anchor `direct-preceding-endpoint-deferral` is general for forward extensibility).",
+      "createdAt": "2026-06-24T06:00:07Z",
+      "updatedAt": "2026-06-24T06:00:07Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
+      "headRepository": "mcguinness/deferred-token-response",
+      "headRefName": "issue-46-direct-preceding-endpoint-deferral",
+      "headRefOid": "b84ce4dc03f2778fba5ceb9ecf3aa9a0b3a1d299",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 49,
+      "id": "PR_kwDOSeoW_M7p96u1",
+      "title": "Add interaction_required token-endpoint state and interaction_uri response parameter",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/49",
+      "state": "OPEN",
+      "author": "mcguinness",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Resolves #48.\n\nAdds a second non-terminal pending state to the polling state machine, distinguishable from `authorization_pending`, for cases where the deferred request is waiting on external interaction. Pairs the new state with an `interaction_uri` response parameter that identifies where the interaction can take place.\n\n### What the PR adds\n\n- **New `interaction_required` error code in \u00a75.6 (Token Endpoint \u2014 Error Responses)**, alongside the existing `authorization_pending`, with clarifying text that:\n  - `authorization_pending` is for pending requests *not* waiting on external interaction.\n  - `interaction_required` is for pending requests waiting on external interaction; the response MUST include `interaction_uri`.\n  - Both are non-terminal; the AS MAY transition between them in either direction.\n  - Polling continues at the established `interval` in both states.\n- **New `interaction_uri` response parameter** documented in \u00a75.4 (Token Endpoint \u2014 Deferred Response), defined as OPTIONAL on `authorization_pending` responses and REQUIRED on `interaction_required` responses. The URI MUST be HTTPS, MUST NOT contain a fragment, and is bound to the deferral state.\n- **Example** showing an `interaction_required` response with `interaction_uri`.\n- **Cross-reference to \u00a7interaction-required-error** wherever needed.\n\n### IANA actions\n\n- **Register `interaction_uri`** in the OAuth Parameters Registry (token response location).\n- **Update the existing `interaction_required` registration** in the OAuth Extensions Error Registry (originally registered by OpenID Connect Core for authorization endpoint use) to add token endpoint response usage. Change controller note credits OIDF for the original authorization-endpoint registration and IETF for the token-endpoint addition.\n- Add OIDC-CORE to informative references (used by the registry-update note).\n\n### Why reuse `interaction_required` rather than minting a new error name\n\nOpenID Connect already registered the name for the same conceptual condition (external interaction is required). Reusing it preserves cross-spec vocabulary alignment and avoids cluttering the registry. The IANA registration update is the established mechanism for adding response locations to existing error codes.\n\n### Files changed\n\n- `draft-gerber-oauth-deferred-token-response.md`: +95/-7 lines. New error code, new parameter, new example, IANA registration update, informative reference addition.\n\n### Source\n\nAdapted from `\u00a7Deferred Error Semantics` and `\u00a7Interaction URI Parameter` in `draft-mcguinness-oauth-deferred-code-processing`.",
+      "createdAt": "2026-06-24T06:02:09Z",
+      "updatedAt": "2026-06-24T06:02:09Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
+      "headRepository": "mcguinness/deferred-token-response",
+      "headRefName": "issue-48-interaction-required",
+      "headRefOid": "194fa84775abe9aee496ff104b424584f0ed1374",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
