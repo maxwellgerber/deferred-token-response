@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-25T02:14:04.914943+00:00",
+  "timestamp": "2026-06-30T02:27:18.210847+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -814,6 +814,22 @@
       "body": "## Problem\n\nThe current draft has a single non-terminal pending state, `authorization_pending`, covering every case where a deferred request has not yet resolved. That includes both:\n\n- Cases where the AS is waiting on automation (policy evaluation, attestation validation, risk analysis), and\n- Cases where the AS is waiting on external interaction by a human (manager approval, document upload, step-up authentication).\n\nA client receiving `authorization_pending` cannot tell which is happening and has no protocol-level way to surface an interaction URI to a user when one is needed. Profiles that need to convey \"an actor outside the polling client must do something\" either invent their own state vocabulary (fragmenting the substrate's state machine) or piggyback information into `error_description` (which is subject to data-minimization rules and not machine-readable).\n\nOpenID Connect's `interaction_required` error code, registered in the OAuth Extensions Error Registry, already names this concept for the authorization endpoint. There is no token-endpoint analog today.\n\n## Solution shape\n\nA second non-terminal pending state in the polling state machine, distinguishable from `authorization_pending`, that signals \"the deferred request is waiting on external interaction\" and carries a URI identifying where the interaction can take place. Constraints:\n\n- Reuses the existing `interaction_required` error name (already in the OAuth Extensions Error Registry); IANA action is a registration update to add token-endpoint usage.\n- New response parameter (`interaction_uri`) registered in the OAuth Parameters Registry.\n- Substrate-level vocabulary: the AS MAY transition between `authorization_pending` and `interaction_required` in either direction during a deferred request's lifetime; polling continues at the established `interval` in both.\n- Client behavior is non-prescriptive: a client SHOULD present the `interaction_uri` to the user when appropriate but is not required to dereference or embed it.\n- Does not change DTR's wire-shape or sender-constraining model.\n\n## Plan\n\nPR to follow.",
       "createdAt": "2026-06-24T06:01:04Z",
       "updatedAt": "2026-06-24T06:01:04Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 50,
+      "id": "I_kwDOSeoW_M8AAAABHGJmQg",
+      "title": "Discovery metadata review",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/50",
+      "state": "OPEN",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I've reviewed this in an earlier PR, but reading again, I had a second thought\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/2c6e03dd0c13270ed7726800bf8fdbea861055a9/draft-gerber-oauth-deferred-token-response.md?plain=1#L317-L319\n\nShouldn't the `deferred_token_response_supported` be `REQUIRED`? Since it is the only parameter, if this is optional, it's impossible to comply with the `MUST` in the prior sentence:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/2c6e03dd0c13270ed7726800bf8fdbea861055a9/draft-gerber-oauth-deferred-token-response.md?plain=1#L315\n\nI'm not sure if it's too much, but should we include in the sentence that this is a must for an AS that publishes AS metadata AND supports deferral?",
+      "createdAt": "2026-06-29T19:56:28Z",
+      "updatedAt": "2026-06-29T19:56:28Z",
       "closedAt": null,
       "comments": []
     }
