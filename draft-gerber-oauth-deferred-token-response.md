@@ -312,19 +312,25 @@ future extension — the client MAY additionally send
 to the authorization server. The semantics of the hint are defined in
 {{pre-token-hints}}.
 
-Authorization servers that publish Authorization Server Metadata [RFC8414] MUST include the following property to signal support for deferred token responses as described in this specification:
+An authorization server that supports the deferred token response
+defined in this specification and publishes Authorization Server
+Metadata [RFC8414] MUST include the following metadata parameter with
+the value `true`:
 
 `deferred_token_response_supported`
-: OPTIONAL. Boolean value specifying whether the the authorization server
+: Boolean value specifying whether the authorization server
   supports the deferred token response defined in this specification.
+  Omission of this parameter, or a value of `false`, indicates no
+  support.
 
 A client MAY discover authorization server support for this
 specification through the `deferred_token_response_supported`
 authorization server metadata parameter ({{iana-considerations}}). A
 client MAY send `completion_mode=deferred` to an authorization server
-that does not advertise support; such an authorization server
-SHOULD silently ignore the parameter and complete the request synchronously
-per its originating grant's rules.
+that does not advertise support. Such a server MUST NOT reject the
+request on account of the parameter; it completes the request
+per its originating grant's rules, consistent with the
+token endpoint's handling of unrecognized parameters.
 
 ## Pre-Token Hints {#pre-token-hints}
 
