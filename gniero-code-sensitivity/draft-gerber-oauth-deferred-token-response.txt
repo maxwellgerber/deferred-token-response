@@ -5,10 +5,10 @@
 Web Authorization Protocol                                 F.K. Jacobsen
 Internet-Draft                                                     Idura
 Intended status: Standards Track                    G. de Oliveira Niero
-Expires: 25 December 2026                                           Itaú
+Expires: 21 January 2027                                            Itaú
                                                                M. Gerber
                                                                   Twilio
-                                                            23 June 2026
+                                                            20 July 2026
 
 
                         Deferred Token Response
@@ -59,7 +59,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 25 December 2026.
+   This Internet-Draft will expire on 21 January 2027.
 
 Copyright Notice
 
@@ -1179,10 +1179,14 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
    Deferral codes have lifetimes that may extend for hours or days.
    Over that window, a stolen deferral code combined with compromised
    client credentials would allow an attacker to retrieve the eventual
-   access token.  Sender-constraining provides a defense-in-depth layer:
-   even if both the deferral code and the client credentials are
-   exposed, the attacker cannot redeem the code without the bound DPoP
-   private key or mTLS certificate.
+   access token.  For a confidential client, sender-constraining
+   provides a defense-in-depth layer: even if both the deferral code and
+   the client credentials are exposed, the attacker cannot redeem the
+   code without the bound DPoP private key or mTLS certificate.  For a
+   public client, which has no client credentials to compromise, sender-
+   constraining is the primary defense against a stolen deferral code
+   rather than an additional layer, which is why the binding below is
+   mandatory for such clients.
 
    A client that is a public client per Section 2.1 of [OAUTH-2.1], or
    that is using an originating grant whose security profile mandates
@@ -1219,7 +1223,11 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
    A deferral code is sender-constrained per Section 10.1, inheriting
    the binding rules of Section 5 of [RFC9449] for refresh tokens.  Its
    threat profile is the same as a refresh token of equivalent lifetime;
-   the considerations of [RFC9449] apply unchanged.
+   the considerations of [RFC9449] apply unchanged.  As described in
+   Section 10.1, redeeming a stolen deferral code also requires the
+   client credentials it is bound to, and the sender-constraining key
+   provides a further layer of protection; for a public client the
+   sender-constraining key is the primary such protection.
 
    The originating grant's credentials — for example, the authorization
    code returned to a client that requested response_type=code — are
@@ -1341,14 +1349,13 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
    A deferral code carries the same sensitivity as a refresh token for
    the duration of expires_in.  Authorization servers and clients MUST
    NOT log deferral code values in plaintext beyond the code's lifetime,
-   and SHOULD treat them as secrets equivalent to refresh tokens with
-   respect to log redaction, transport security, and at-rest storage.
-   Standard web-server access logs that capture POST bodies retain
-   deferral code values for the entire log retention window;
-   implementations SHOULD configure their logging stacks to redact the
-   deferral_code parameter wherever it appears — both as the polling
-   request parameter and as the response field of deferred responses
-   (see Section 5.4).
+   and SHOULD apply the same log redaction, transport security, and at-
+   rest storage protections they apply to refresh tokens.  Standard web-
+   server access logs that capture POST bodies retain deferral code
+   values for the entire log retention window; implementations SHOULD
+   configure their logging stacks to redact the deferral_code parameter
+   wherever it appears — both as the polling request parameter and as
+   the response field of deferred responses (see Section 5.4).
 
 11.  Privacy Considerations
 
@@ -1592,9 +1599,9 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
 
    [FIPA]     Parecki, A., Fletcher, G., and P. Kasselman, "OAuth 2.0
               for First-Party Applications", Work in Progress, Internet-
-              Draft, draft-ietf-oauth-first-party-apps-03, 27 February
-              2026, <https://datatracker.ietf.org/doc/html/draft-ietf-
-              oauth-first-party-apps-03>.
+              Draft, draft-ietf-oauth-first-party-apps-04, 1 July 2026,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-oauth-
+              first-party-apps-04>.
 
    [ID-JAG]   Parecki, A., McGuinness, K., and B. Campbell, "Identity
               Assertion JWT Authorization Grant", Work in Progress,
