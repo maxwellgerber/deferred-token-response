@@ -1176,10 +1176,14 @@ The following considerations are specific to this specification.
 Deferral codes have lifetimes that may extend for hours or days. Over
 that window, a stolen deferral code combined with compromised client
 credentials would allow an attacker to retrieve the eventual access
-token. Sender-constraining provides a defense-in-depth layer: even if
-both the deferral code and the client credentials are exposed, the
-attacker cannot redeem the code without the bound DPoP private key or
-mTLS certificate.
+token. For a confidential client, sender-constraining provides a
+defense-in-depth layer: even if both the deferral code and the client
+credentials are exposed, the attacker cannot redeem the code without
+the bound DPoP private key or mTLS certificate. For a public client,
+which has no client credentials to compromise, sender-constraining is
+the primary defense against a stolen deferral code rather than an
+additional layer, which is why the binding below is mandatory for such
+clients.
 
 A client that is a public client per {{Section 2.1 of OAUTH-2.1}}, or
 that is using an originating grant whose security profile mandates
@@ -1217,7 +1221,12 @@ A deferral code is sender-constrained per
 {{sender-constraint-requirements}}, inheriting the binding rules of
 {{Section 5 of RFC9449}} for refresh tokens. Its threat profile is the
 same as a refresh token of equivalent lifetime; the considerations of
-{{RFC9449}} apply unchanged.
+{{RFC9449}} apply unchanged. As described in
+{{sender-constraint-requirements}}, redeeming a stolen deferral code
+also requires the client credentials it is bound to, and the
+sender-constraining key provides a further layer of protection; for a
+public client the sender-constraining key is the primary such
+protection.
 
 The originating grant's credentials — for example, the authorization
 `code` returned to a client that requested `response_type=code` — are
@@ -1339,8 +1348,8 @@ issue an access token. This is the deferred-grant analogue of
 A deferral code carries the same sensitivity as a refresh token for
 the duration of `expires_in`. Authorization servers and clients MUST NOT log
 deferral code values in plaintext beyond the code's lifetime, and
-SHOULD treat them as secrets equivalent to refresh tokens with
-respect to log redaction, transport security, and at-rest storage.
+SHOULD apply the same log redaction, transport security, and at-rest
+storage protections they apply to refresh tokens.
 Standard web-server access logs that capture POST bodies retain
 deferral code values for the entire log retention window;
 implementations SHOULD configure their logging stacks to redact the
