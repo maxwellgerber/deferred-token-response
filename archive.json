@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-30T02:27:18.210847+00:00",
+  "timestamp": "2026-07-21T01:44:26.678852+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -339,7 +339,7 @@
       ],
       "body": "The \"originating grant\" definition lists Authorization Code, Client Credentials, and Token Exchange:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L172-L179\n\nBut we do allow any originating grant as it is now. Refresh tokens have quite different semantics, so I think we should mention them specifically.\nIn particular, we need to think about how cancellation of a deferred flow affects the refresh token and whether a deferred response consumes the refresh token (probably not).",
       "createdAt": "2026-05-22T08:53:55Z",
-      "updatedAt": "2026-06-03T11:58:17Z",
+      "updatedAt": "2026-07-19T13:46:55Z",
       "closedAt": null,
       "comments": [
         {
@@ -355,6 +355,20 @@
           "body": "Good point. My mind immediately jumped to binding the refresh token to the polling flow, but I think the state management of that would be horrible. I think we need to discuss this in more detail and think through the interactions.",
           "createdAt": "2026-06-03T11:58:16Z",
           "updatedAt": "2026-06-03T11:58:16Z"
+        },
+        {
+          "author": "max-stytch",
+          "authorAssociation": "NONE",
+          "body": "Summing up a conversation from IETF 126 w @fkj @identitymonk @yaron-zehavi:\n\n- We need to describe the expected behavior for OAuth 2.1 public clients using the refresh token grant type (which triggers token rotation semantics)\n- We should make sure that whatever rules we apply to single-use refresh tokens are consistent with the rules for single-use authorization codes as well\n\nSpecifically, an AS needs to decide what to do with the original refresh token presented by the client when the AS decides to initiate a DTR flow. There are four mechanisms we can consider:\n1. The refresh token is consumed at the beginning of the flow, and is exchanged for a deferred code 1-1. The deferred flow results in either success (resulting in a new refresh token) or fails (possibly freeing up the original token to be used again). As a result, a public client can only imitate one DTR flow per refresh token.\n2. The refresh token is not consumed at the beginning of the flow, but at the completion of the flow. Multiple DTR flows can be started in parallel, but only the first one will succeed, triggering all the others to be cancelled.\n3. DTR and the refresh token grant type are incompatible. You cannot use DTR with refresh tokens.\n4. Sender constraining (such as DPoP) is **required** for using DTR with public clients, and as a result refresh tokens do not need to be rotated.",
+          "createdAt": "2026-07-19T12:11:14Z",
+          "updatedAt": "2026-07-19T12:11:14Z"
+        },
+        {
+          "author": "yaron-zehavi",
+          "authorAssociation": "NONE",
+          "body": "Thanks @max-stytch,\n@fkj offered another option which I think offers benefits, which is refresh token is consumed when deferral is decided, and the client obtains in response a new refresh token which can be used for other flows (e.g token exchange) and a deferral code for completing the original token request.",
+          "createdAt": "2026-07-19T13:46:55Z",
+          "updatedAt": "2026-07-19T13:46:55Z"
         }
       ]
     },
@@ -797,9 +811,59 @@
       "labels": [],
       "body": "## Problem\n\nToday, when an authorization server defers a request for a grant that has a preceding endpoint, the preceding endpoint always returns its normal response (typically an authorization code), and the deferral decision is observed only at the token endpoint. `completion_mode=deferred` on the preceding request is a hint that influences the AS's later behavior but does not change the preceding endpoint's response shape.\n\nThis is correct for cases where the deferral is downstream of the preceding endpoint's normal operation. It is awkward for cases where the *authorization decision itself* is what is deferred:\n\n- Front-channel step-up where the AS cannot decide whether to authorize until an out-of-band approval completes.\n- Deferred ID Token issuance where claim verification follows the redirect.\n\nIn those cases, issuing an authorization code commits the AS to a decision it has not yet made. The code is later either redeemed against a deferred outcome (which works but is semantically odd) or unused (which leaks a credential).\n\n## Solution shape\n\nAn OPTIONAL extension that lets the preceding endpoint return a deferred response directly, in place of the originating grant's normal response. Constraints:\n\n- OPTIONAL. Authorization servers MUST be able to ignore the extension entirely and use the existing hint-only model. Discoverable via authorization server metadata.\n- Does not change the default behavior of the preceding endpoint or the hint mechanism currently in \u00a74.2.\n- Preserves the substrate's invariants (continuation through the token endpoint, sender-constraining continuity, polling availability).\n- Defines the wire shape only for the authorization endpoint in this iteration; other preceding endpoints (device, FIPA) can be addressed in follow-up profiles.\n- Includes the PKCE handshake for public clients that need to defer at the authorization endpoint (verifier presented on the first polling request, not on subsequent ones).\n\n## Plan\n\nPR to follow.",
       "createdAt": "2026-06-24T05:54:52Z",
-      "updatedAt": "2026-06-24T05:54:52Z",
+      "updatedAt": "2026-07-20T12:26:15Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "max-stytch",
+          "authorAssociation": "NONE",
+          "body": "Our rationale for always returning the deferred response from the `/token` endpoint is that it allows for DPoP binding. If we returned the deferral code directly from the `/authorize` endpoint, the client would not have an opportunity to present a DPoP proof - and since the deferral code is long lived by design this would be an issue.",
+          "createdAt": "2026-07-19T11:47:55Z",
+          "updatedAt": "2026-07-19T11:47:55Z"
+        },
+        {
+          "author": "mcguinness",
+          "authorAssociation": "NONE",
+          "body": "DPoP can already be bound at the authorization request via the standard dpop_jkt parameter (RFC 9449). The AS binds the authorization code (or deferred transaction) to that JWK thumbprint, and the client proves possession when polling or redeeming with a DPoP proof. No new DPoP continuity mechanism is needed; just carry the existing dpop_jkt binding forward.",
+          "createdAt": "2026-07-19T12:15:08Z",
+          "updatedAt": "2026-07-19T12:15:08Z"
+        },
+        {
+          "author": "max-stytch",
+          "authorAssociation": "NONE",
+          "body": "Oh, neat - I wasn't familiar with `dpop_jkt` but that sounds like it would do the trick. @fkj @gniero WDYT?",
+          "createdAt": "2026-07-19T12:21:44Z",
+          "updatedAt": "2026-07-19T12:21:44Z"
+        },
+        {
+          "author": "mcguinness",
+          "authorAssociation": "NONE",
+          "body": "I updated the PR to include language around this https://github.com/maxwellgerber/deferred-token-response/pull/47\n",
+          "createdAt": "2026-07-19T15:57:02Z",
+          "updatedAt": "2026-07-19T15:57:02Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Yes I think we should definitely look into simplifying using `dpop_jkt`. Let's explore it!",
+          "createdAt": "2026-07-19T17:35:11Z",
+          "updatedAt": "2026-07-19T17:35:11Z"
+        },
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think it is a nice approach. We should probably add some considerations about `client_notification_token`. It should not be informed in clear at the authorization endpoint",
+          "createdAt": "2026-07-20T12:13:55Z",
+          "updatedAt": "2026-07-20T12:13:55Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I think it is a nice approach. We should probably add some considerations about `client_notification_token`. It should not be informed in clear at the authorization endpoint\n\nGood point. I think we could require PAR to solve this?",
+          "createdAt": "2026-07-20T12:26:15Z",
+          "updatedAt": "2026-07-20T12:26:15Z"
+        }
+      ]
     },
     {
       "number": 48,
@@ -822,15 +886,15 @@
       "id": "I_kwDOSeoW_M8AAAABHGJmQg",
       "title": "Discovery metadata review",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/50",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "gniero",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "I've reviewed this in an earlier PR, but reading again, I had a second thought\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/2c6e03dd0c13270ed7726800bf8fdbea861055a9/draft-gerber-oauth-deferred-token-response.md?plain=1#L317-L319\n\nShouldn't the `deferred_token_response_supported` be `REQUIRED`? Since it is the only parameter, if this is optional, it's impossible to comply with the `MUST` in the prior sentence:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/2c6e03dd0c13270ed7726800bf8fdbea861055a9/draft-gerber-oauth-deferred-token-response.md?plain=1#L315\n\nI'm not sure if it's too much, but should we include in the sentence that this is a must for an AS that publishes AS metadata AND supports deferral?",
       "createdAt": "2026-06-29T19:56:28Z",
-      "updatedAt": "2026-06-29T19:56:28Z",
-      "closedAt": null,
+      "updatedAt": "2026-07-20T17:02:43Z",
+      "closedAt": "2026-07-20T17:02:43Z",
       "comments": []
     }
   ],
@@ -1848,19 +1912,33 @@
       "labels": [],
       "body": "We've got issues #25 and #42 that relates to client authentication and code protection. This proposes rephrasing some sentences that don't consider sender-constrained codes.",
       "createdAt": "2026-06-23T20:15:19Z",
-      "updatedAt": "2026-06-24T10:04:46Z",
+      "updatedAt": "2026-07-20T13:57:32Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "gniero-code-sensitivity",
-      "headRefOid": "f854f671ba5f105d734dd9a352306758f01fb814",
+      "headRefOid": "4e99f8e3de31d81d492b92ba6702cf43843932ab",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABGkNOng",
+          "commit": {
+            "abbreviatedOid": "4e99f8e"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "We should probably rethink the refresh token wording later, but I think it's an improvement to the wording for now.",
+          "createdAt": "2026-07-20T13:57:32Z",
+          "updatedAt": "2026-07-20T13:57:32Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 45,
@@ -1898,15 +1976,15 @@
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
-      "body": "Resolves #46.\n\nAdds a new `## Direct Preceding-Endpoint Deferral` subsection under `# The Deferred Authorization Grant`, immediately after `## Pre-Token Response`. The section defines an OPTIONAL extension in which the authorization endpoint returns a deferred response directly (a redirect carrying `deferral_code`) in place of the originating grant's normal response.\n\nThe default behavior (hint-only at the preceding endpoint) is unchanged. Authorization servers that do not support direct deferral can ignore the extension entirely.\n\n### What the section defines\n\n- **When direct deferral applies**: only when the authorization server signals support via the new `deferred_authorization_endpoint_supported` metadata flag.\n- **Wire shape for the authorization endpoint**: the redirect carries `deferral_code`, `state`, `expires_in`, and optionally `interval`, in place of the normal `code` parameter. Uses the same `response_mode` (`query` or `form_post`) the authorization request selected. `response_mode=fragment` SHOULD NOT be used; rationale included.\n- **PKCE on the first polling request**: when the originating authorization request used PKCE, the `code_verifier` is presented on the first polling request (as an exception to the polling-request prohibition on parameters that modify the originating request) and MUST NOT be re-presented on subsequent polling requests.\n- **Public-client requirement**: PKCE is REQUIRED for public clients per RFC 9700.\n- **Other preceding endpoints**: out of scope for this iteration; a future profile can extend the wire shape to the device authorization endpoint of RFC 8628 or the authorization challenge endpoint of FIPA.\n\n### IANA addition\n\n- `deferred_authorization_endpoint_supported`: Boolean AS metadata. Default `false`. When `true`, the AS supports direct deferral at the authorization endpoint.\n\n### Files changed\n\n- `draft-gerber-oauth-deferred-token-response.md`: +112 lines, new subsection plus IANA registration entry.\n\n### Source\n\nAdapted from `\u00a7Authorization Endpoint Extensions` in `draft-mcguinness-oauth-deferred-code-processing`. The metadata parameter name `deferred_authorization_endpoint_supported` is shortened from the source draft's verbose name and is endpoint-specific (the section anchor `direct-preceding-endpoint-deferral` is general for forward extensibility).",
+      "body": "Resolves #46.\n\nAdds a new `## Direct Preceding-Endpoint Deferral` subsection under `# The Deferred Authorization Grant`, immediately after `## Pre-Token Response`. The section defines an OPTIONAL extension in which the authorization endpoint returns a deferred response directly (a redirect carrying `deferral_code`) in place of the originating grant's normal response.\n\nThe default behavior (hint-only at the preceding endpoint) is unchanged. Authorization servers that do not support direct deferral can ignore the extension entirely.\n\n### What the section defines\n\n- **When direct deferral applies**: only when the authorization server signals support via the new `deferred_authorization_endpoint_supported` metadata flag.\n- **Wire shape for the authorization endpoint**: the redirect carries `deferral_code`, `state`, `expires_in`, and optionally `interval`, in place of the normal `code` parameter. Uses the same `response_mode` (`query` or `form_post`) the authorization request selected. `response_mode=fragment` SHOULD NOT be used; rationale included.\n- **Sender-constraining requirements**: the `deferral_code` is not single-use (unlike an authorization code), so sender-constraining is required both at the authorization response and on every polling request. PKCE is REQUIRED on the authorization request for all clients (extending RFC 9700 \u00a72.1.1 to confidential clients). Every polling request MUST be sender-constrained by client authentication or by DPoP bound via `dpop_jkt` (RFC 9449). Public clients MUST use `dpop_jkt`.\n- **PKCE-on-first-polling mechanics**: `code_verifier` is presented on the first polling request (as an exception to the polling-request prohibition on parameters that modify the originating request) and MUST NOT be re-presented on subsequent polling requests.\n- **DPoP binding mechanics**: `dpop_jkt` on the authorization request binds the JWK thumbprint to the deferral state; the AS verifies DPoP proofs on every polling request against the bound thumbprint. Addresses the sender-constrained credential concern raised on the issue.\n- **Other preceding endpoints**: out of scope for this iteration; a future profile can extend the wire shape to the device authorization endpoint of RFC 8628 or the authorization challenge endpoint of FIPA.\n\n### Security Considerations\n\nAdds `## Direct Preceding-Endpoint Deferral` to Security Considerations. The `deferral_code` is delivered via the authorization response and is thus exposed to browser history, referrer headers, and redirection-target access logs \u2014 the same vectors RFC 9700 identifies for authorization codes. Combined with the deferral code's long lifetime and multi-use presentation on polling, an unbound `deferral_code` has an impact comparable to an intercepted refresh token. This motivates the stricter sender-constraint requirements above.\n\n### IANA addition\n\n- `deferred_authorization_endpoint_supported`: Boolean AS metadata. Default `false`. When `true`, the AS supports direct deferral at the authorization endpoint.\n\n### Files changed\n\n- `draft-gerber-oauth-deferred-token-response.md`: +172 lines, new subsections plus IANA registration entry and security consideration.\n\n### Source\n\nAdapted from `\u00a7Authorization Endpoint Extensions` in `draft-mcguinness-oauth-deferred-code-processing`. The metadata parameter name `deferred_authorization_endpoint_supported` is shortened from the source draft's verbose name and is endpoint-specific (the section anchor `direct-preceding-endpoint-deferral` is general for forward extensibility).",
       "createdAt": "2026-06-24T06:00:07Z",
-      "updatedAt": "2026-06-24T06:00:07Z",
+      "updatedAt": "2026-07-19T16:03:58Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
       "headRepository": "mcguinness/deferred-token-response",
       "headRefName": "issue-46-direct-preceding-endpoint-deferral",
-      "headRefOid": "b84ce4dc03f2778fba5ceb9ecf3aa9a0b3a1d299",
+      "headRefOid": "5af124decd3fb99d5134006ed5592456f59e92e6",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -1939,6 +2017,61 @@
       "mergeCommit": null,
       "comments": [],
       "reviews": []
+    },
+    {
+      "number": 51,
+      "id": "PR_kwDOSeoW_M7z2wqF",
+      "title": "Rewords discovery metadata",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/51",
+      "state": "MERGED",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Addresses #50, a small contradiction of the `deferred_token_response_supported` being optional while the specification requires the presence of the attribute",
+      "createdAt": "2026-07-20T12:58:19Z",
+      "updatedAt": "2026-07-20T16:55:04Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "gniero-discovery-metadata",
+      "headRefOid": "048eb5053f983a41e5eeb639f09573775399b458",
+      "closedAt": "2026-07-20T16:55:00Z",
+      "mergedAt": "2026-07-20T16:55:00Z",
+      "mergedBy": "gniero",
+      "mergeCommit": {
+        "oid": "579c11f8ff8a0f6f723b314c9fb2cb1f8e999d9a"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABGj3g8A",
+          "commit": {
+            "abbreviatedOid": "048eb50"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-20T13:14:03Z",
+          "updatedAt": "2026-07-20T13:14:03Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABGkHqBQ",
+          "commit": {
+            "abbreviatedOid": "048eb50"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-20T13:46:25Z",
+          "updatedAt": "2026-07-20T13:46:25Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
