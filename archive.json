@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-21T01:44:26.678852+00:00",
+  "timestamp": "2026-07-23T01:51:00.516890+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -895,6 +895,60 @@
       "createdAt": "2026-06-29T19:56:28Z",
       "updatedAt": "2026-07-20T17:02:43Z",
       "closedAt": "2026-07-20T17:02:43Z",
+      "comments": []
+    },
+    {
+      "number": 52,
+      "id": "I_kwDOSeoW_M8AAAABJsjl3g",
+      "title": "Example deferral_code values conflict with the 128-bit entropy MUST",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/52",
+      "state": "OPEN",
+      "author": "mcguinness",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "The deferred response section requires:\n\n> The deferral code MUST contain at least 128 bits of entropy (160 bits RECOMMENDED) drawn from a cryptographically secure random source per Section 10.10 of RFC 6749.\n\nEvery example in the document uses `8d67dc78-7faa-4d41-aabd-67707b374255`, a UUIDv4. A v4 UUID carries at most 122 bits of randomness (6 bits are fixed by the version and variant fields), so the examples sit just below the MUST next to them. The format also invites implementers to reach for a UUID library, and not every UUID generator is CSPRNG-backed (v1 in particular is not random at all).\n\nThe value appears in five examples: the direct authorization endpoint deferred response, the deferred token response, the polling request, the callback notification, and the revocation request.\n\nTwo ways to resolve, depending on whether 128 was a deliberate threshold:\n\n1. Keep the requirement and replace the example value with an unpadded base64url encoding of 32 CSPRNG bytes (43 characters), for example `V7e1gP8zT2mN4qR6sW9xY3aB5cD7fH0jK2pL4uQ6vX8`, optionally with a note that UUIDs do not satisfy the requirement; or\n2. Change the entropy requirement so the examples comply, for example \"at least 120 bits\" with a note that a CSPRNG-generated UUIDv4 qualifies.",
+      "createdAt": "2026-07-22T05:08:36Z",
+      "updatedAt": "2026-07-22T13:16:09Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This was probably inherited from the original OIDC draft we wrote in the past, where this value is also present. \nThis one got by us over there.\n\nAlternative *1* is aligned to quantitative requirements expressed by other attributes that have similar exposure (`request_uri`, `authorization_code`), so it seems a better solution to me.",
+          "createdAt": "2026-07-22T13:01:34Z",
+          "updatedAt": "2026-07-22T13:01:34Z"
+        },
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I just checked CIBA examples and this happens over there. They have UUIDv4 for all the `auth_req_id`s and other attributes that require 128 bits of entropy in their examples",
+          "createdAt": "2026-07-22T13:12:07Z",
+          "updatedAt": "2026-07-22T13:12:07Z"
+        },
+        {
+          "author": "mcguinness",
+          "authorAssociation": "NONE",
+          "body": "The authors didn't have the privilege of having machines that read the specs and complain at you! Joke aside, it's a small nit that can get resolved before publishing. ",
+          "createdAt": "2026-07-22T13:16:09Z",
+          "updatedAt": "2026-07-22T13:16:09Z"
+        }
+      ]
+    },
+    {
+      "number": 53,
+      "id": "I_kwDOSeoW_M8AAAABJsj_bg",
+      "title": "Deferral code revocation is not sender-constrained for public clients",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/53",
+      "state": "OPEN",
+      "author": "mcguinness",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Polling is sender-constrained: a public client's deferral is bound to a DPoP key, and every polling request must prove possession of it. Cancellation is not. The Cancellation section revokes a deferral code at the RFC 7009 revocation endpoint, where \"the client authenticates to the revocation endpoint as required by its registered authentication method\" \u2014 which, for a public client, is no authentication at all. The revocation semantics then act whenever \"the deferral code is recognized and was issued to the authenticated client,\" a check a public client's client_id satisfies trivially since it is public information.\n\nThe result is an artifact that is sender-constrained for redemption but bearer for destruction. Anyone who observes a public client's deferral code \u2014 and the direct authorization endpoint deferral of #46 / PR 47 places it in front-channel URLs, browser history, and Referer headers under the default query response mode \u2014 can cancel the pending request. For deferrals backing long-running approval workflows, that is a denial of service that silently discards work a human may have spent days on, and the client discovers it only as `access_denied` on its next poll.\n\nSuggested fix: when a deferral is bound to a DPoP key, a revocation request presenting its deferral code MUST include a DPoP proof with that key (RFC 9449 applies at any endpoint); a request without the proof is treated as presenting an unrecognized token per rule 2 of the revocation semantics. Confidential clients are already covered by client authentication.\n\nRelated: #42 discusses the bearer-equivalence framing in the security considerations; this issue is about the revocation endpoint's behavior specifically.",
+      "createdAt": "2026-07-22T05:09:40Z",
+      "updatedAt": "2026-07-22T05:09:40Z",
+      "closedAt": null,
       "comments": []
     }
   ],
