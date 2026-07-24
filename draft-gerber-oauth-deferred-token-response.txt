@@ -5,10 +5,10 @@
 Web Authorization Protocol                                 F.K. Jacobsen
 Internet-Draft                                                     Idura
 Intended status: Standards Track                    G. de Oliveira Niero
-Expires: 21 January 2027                                            Itaú
+Expires: 25 January 2027                                            Itaú
                                                                M. Gerber
                                                                   Twilio
-                                                            20 July 2026
+                                                            24 July 2026
 
 
                         Deferred Token Response
@@ -59,7 +59,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 21 January 2027.
+   This Internet-Draft will expire on 25 January 2027.
 
 Copyright Notice
 
@@ -1180,9 +1180,16 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
 10.1.  Sender-Constraint Requirements
 
    Deferral codes have lifetimes that may extend for hours or days.
-   Over that window, possession alone confers the right to retrieve the
-   eventual access token.  To prevent the substitution attacks this
-   implies, deferral codes are sender-constrained.
+   Over that window, a stolen deferral code combined with compromised
+   client credentials would allow an attacker to retrieve the eventual
+   access token.  For a confidential client, sender-constraining
+   provides a defense-in-depth layer: even if both the deferral code and
+   the client credentials are exposed, the attacker cannot redeem the
+   code without the bound DPoP private key or mTLS certificate.  For a
+   public client, which has no client credentials to compromise, sender-
+   constraining is the primary defense against a stolen deferral code
+   rather than an additional layer, which is why the binding below is
+   mandatory for such clients.
 
    A client that is a public client per Section 2.1 of [OAUTH-2.1], or
    that is using an originating grant whose security profile mandates
@@ -1219,7 +1226,11 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
    A deferral code is sender-constrained per Section 10.1, inheriting
    the binding rules of Section 5 of [RFC9449] for refresh tokens.  Its
    threat profile is the same as a refresh token of equivalent lifetime;
-   the considerations of [RFC9449] apply unchanged.
+   the considerations of [RFC9449] apply unchanged.  As described in
+   Section 10.1, redeeming a stolen deferral code also requires the
+   client credentials it is bound to, and the sender-constraining key
+   provides a further layer of protection; for a public client the
+   sender-constraining key is the primary such protection.
 
    The originating grant's credentials — for example, the authorization
    code returned to a client that requested response_type=code — are
@@ -1338,11 +1349,11 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
 
 10.8.  Logging and Disposal of Deferral Codes
 
-   A deferral code is a bearer-equivalent credential for the duration of
-   expires_in.  Authorization servers and clients MUST NOT log deferral
-   code values in plaintext beyond the code's lifetime, and SHOULD treat
-   them as secrets equivalent to refresh tokens with respect to log
-   redaction, transport security, and at-rest storage.  Standard web-
+   A deferral code carries the same sensitivity as a refresh token for
+   the duration of expires_in.  Authorization servers and clients MUST
+   NOT log deferral code values in plaintext beyond the code's lifetime,
+   and SHOULD apply the same log redaction, transport security, and at-
+   rest storage protections they apply to refresh tokens.  Standard web-
    server access logs that capture POST bodies retain deferral code
    values for the entire log retention window; implementations SHOULD
    configure their logging stacks to redact the deferral_code parameter
