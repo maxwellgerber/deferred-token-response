@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-23T01:51:00.516890+00:00",
+  "timestamp": "2026-07-26T01:50:00.048996+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -948,6 +948,22 @@
       "body": "Polling is sender-constrained: a public client's deferral is bound to a DPoP key, and every polling request must prove possession of it. Cancellation is not. The Cancellation section revokes a deferral code at the RFC 7009 revocation endpoint, where \"the client authenticates to the revocation endpoint as required by its registered authentication method\" \u2014 which, for a public client, is no authentication at all. The revocation semantics then act whenever \"the deferral code is recognized and was issued to the authenticated client,\" a check a public client's client_id satisfies trivially since it is public information.\n\nThe result is an artifact that is sender-constrained for redemption but bearer for destruction. Anyone who observes a public client's deferral code \u2014 and the direct authorization endpoint deferral of #46 / PR 47 places it in front-channel URLs, browser history, and Referer headers under the default query response mode \u2014 can cancel the pending request. For deferrals backing long-running approval workflows, that is a denial of service that silently discards work a human may have spent days on, and the client discovers it only as `access_denied` on its next poll.\n\nSuggested fix: when a deferral is bound to a DPoP key, a revocation request presenting its deferral code MUST include a DPoP proof with that key (RFC 9449 applies at any endpoint); a request without the proof is treated as presenting an unrecognized token per rule 2 of the revocation semantics. Confidential clients are already covered by client authentication.\n\nRelated: #42 discusses the bearer-equivalence framing in the security considerations; this issue is about the revocation endpoint's behavior specifically.",
       "createdAt": "2026-07-22T05:09:40Z",
       "updatedAt": "2026-07-22T05:09:40Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 54,
+      "id": "I_kwDOSeoW_M8AAAABJ33BGQ",
+      "title": "Rehash use of deferral_code in Callback Notification",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/54",
+      "state": "OPEN",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "From @bc-pi during IETF 126:\n- AS must pass `deferral_code` to the Client a second time in the Callback Notification. Why? Sending the one-time secret over the wire twice is not great.\n\nRaw Thoughts:\n- This means the AS must store the `deferral_code` in plaintext vs storing a hash of the code after generation. Not great.\n- Client currently uses `deferral_code` to identify the authorization transaction in a multi-tenant setup (where client has many users, and may be involved in multiple DTR flows at once), assuming the client isn't making use of `client_notification_token`, which could also be used to identify the transaction\n- We could make `client_notification_token` required to get rid of `deferral_code` completely in the current setup, but that introduces new problems.\n- Client generation of `client_notification_token` means that clients must generate a token (and potentially preemptively store state) on _every_ token request, even requests that do not end up deferred.\n- @mcgiunnes 's proposal [here](https://mcguinness.github.io/draft-mcguinness-oauth-deferred-code/draft-mcguinness-oauth-deferred-code-processing.html) inverts the generation of the token and makes it the AS responsibility. This also has the benefit of playing with #46 #47 better since a `client_notification_token` wouldn't need to be passed to the AS at the `/authorize` endpoint\n\nMy first impression is to adopt Karl's proposal, move the notification token generation to the AS, and drop `deferral_code` in the notification response entirely. This moves us further away from CIBA, but that's probably fine.\n",
+      "createdAt": "2026-07-23T09:39:51Z",
+      "updatedAt": "2026-07-23T09:39:51Z",
       "closedAt": null,
       "comments": []
     }
@@ -1959,24 +1975,26 @@
       "id": "PR_kwDOSeoW_M7p0b79",
       "title": "Rephrase considerations on deferred code sensitivity",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/43",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "gniero",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "We've got issues #25 and #42 that relates to client authentication and code protection. This proposes rephrasing some sentences that don't consider sender-constrained codes.",
       "createdAt": "2026-06-23T20:15:19Z",
-      "updatedAt": "2026-07-20T13:57:32Z",
+      "updatedAt": "2026-07-24T14:24:22Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "gniero-code-sensitivity",
       "headRefOid": "4e99f8e3de31d81d492b92ba6702cf43843932ab",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-24T14:24:19Z",
+      "mergedAt": "2026-07-24T14:24:19Z",
+      "mergedBy": "gniero",
+      "mergeCommit": {
+        "oid": "5d1821ee54e0b9669eeb3c76681b96f137f6893a"
+      },
       "comments": [],
       "reviews": [
         {
