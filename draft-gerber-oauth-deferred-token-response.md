@@ -26,23 +26,19 @@ venue:
 
 author:
  -
-    initials: "F.K."
-    surname: Jacobsen
-    fullname: Frederik Krogsdal Jacobsen
-    organization: Idura
-    email: frederik.krogsdal@idura.eu
- -
     initials: G.
     surname: de Oliveira Niero
     fullname: Guilherme de Oliveira Niero
     organization: Itaú
     email: guilherme.niero@itau-unibanco.com.br
+    role: editor
  -
-    initials: M.
-    surname: Gerber
-    fullname: Maxwell Gerber
-    organization: Twilio
-    email: mgerber@twilio.com
+    initials: D.
+    surname: Liu
+    fullname: Dapeng Liu
+    organization: Alibaba Group
+    email: max.ldp@alibaba-inc.com
+    role: editor
 
 normative:
   RFC2119:
@@ -1622,9 +1618,54 @@ purpose-built governance system, without requiring the client to
 integrate with the governance system directly.
 
 
+# Document History
+{:numbered="false"}
+
+*[[ To be removed by the RFC Editor before publication as an RFC. ]]*
+
+-01
+
+* Merged with draft-parecki-oauth-jwt-grant-interaction-response.
+* Clarified behavior around publishing of `deferred_token_response_supported`
+  in AS metadata.
+* Clarified behavior around treatment of `completion_mode` when AS does
+  not support it.
+* Expanded the sender-constraint rationale to distinguish sender-constraining
+  as defense-in-depth for confidential clients from sender-constraining as
+  the primary defense for public clients.
+* Reframed the sensitivity of a deferral code in terms of equivalence to a
+  refresh token rather than to a bearer token.
+
+-00
+
+* Initial version.
+
+
 # Acknowledgments
 {:numbered="false"}
 
 The authors would like to thank the following people for their contributions
 and reviews of this specification: Karl McGuinness, Mikkel Christensen, Mick Hansen, Vitor Watanabe, Ricardo Pereira
+
+
+# Contributors
+{:numbered="false"}
+
+The following individuals are co-authors:
+
+Frederik Krogsdal Jacobsen
+: Idura
+: frederik.krogsdal@idura.eu
+
+Maxwell Gerber
+: Twilio
+: mgerber@twilio.com
+
+Aaron Parecki
+: Okta
+: aaron@parecki.com
+
+Brian Campbell
+: Ping Identity
+: bcampbell@pingidentity.com
 
