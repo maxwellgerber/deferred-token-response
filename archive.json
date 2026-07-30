@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-26T01:50:00.048996+00:00",
+  "timestamp": "2026-07-30T01:24:37.030705+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -2144,6 +2144,32 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 55,
+      "id": "PR_kwDOSeoW_M74B4Qj",
+      "title": "Merge with JAG-IR",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/55",
+      "state": "OPEN",
+      "author": "maxwellgerber",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "- Adds authors of JAG-IR\r\n- Promotes Guilherme and Dapeng to the Editor role",
+      "createdAt": "2026-07-29T14:07:47Z",
+      "updatedAt": "2026-07-29T14:07:47Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "5d1821ee54e0b9669eeb3c76681b96f137f6893a",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "max/merge-authorships",
+      "headRefOid": "cfe4b3e3952c275fe555e900a6c30efd6fb611b8",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
