@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-30T01:24:37.030705+00:00",
+  "timestamp": "2026-08-02T01:48:54.909492+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -964,6 +964,22 @@
       "body": "From @bc-pi during IETF 126:\n- AS must pass `deferral_code` to the Client a second time in the Callback Notification. Why? Sending the one-time secret over the wire twice is not great.\n\nRaw Thoughts:\n- This means the AS must store the `deferral_code` in plaintext vs storing a hash of the code after generation. Not great.\n- Client currently uses `deferral_code` to identify the authorization transaction in a multi-tenant setup (where client has many users, and may be involved in multiple DTR flows at once), assuming the client isn't making use of `client_notification_token`, which could also be used to identify the transaction\n- We could make `client_notification_token` required to get rid of `deferral_code` completely in the current setup, but that introduces new problems.\n- Client generation of `client_notification_token` means that clients must generate a token (and potentially preemptively store state) on _every_ token request, even requests that do not end up deferred.\n- @mcgiunnes 's proposal [here](https://mcguinness.github.io/draft-mcguinness-oauth-deferred-code/draft-mcguinness-oauth-deferred-code-processing.html) inverts the generation of the token and makes it the AS responsibility. This also has the benefit of playing with #46 #47 better since a `client_notification_token` wouldn't need to be passed to the AS at the `/authorize` endpoint\n\nMy first impression is to adopt Karl's proposal, move the notification token generation to the AS, and drop `deferral_code` in the notification response entirely. This moves us further away from CIBA, but that's probably fine.\n",
       "createdAt": "2026-07-23T09:39:51Z",
       "updatedAt": "2026-07-23T09:39:51Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 56,
+      "id": "I_kwDOSeoW_M8AAAABK3xF-A",
+      "title": "Is a new artifact worth the complexity? Why not just say it's a refresh token?",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/56",
+      "state": "OPEN",
+      "author": "will-bartlett",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "I was reviewing this spec subsequent to IETF 126. I was trying to understand how different a deferral code is from a refresh token. They both seem to be representations of the user session, which may or may not be able to successfully obtain access tokens.\n\nThe spec presents an example:\n\n```\n{\n  \"error\": \"authorization_pending\",\n  \"deferral_code\": \"8d67dc78-7faa-4d41-aabd-67707b374255\",\n  \"expires_in\": 10800,\n  \"interval\": 60\n}\n```\n\nCouldn't the same example be written like:\n\n```\n{\n  \"error\": \"authorization_pending\",\n  \"refresh_token\": \"8d67dc78-7faa-4d41-aabd-67707b374255\",\n  \"refresh_token_expires_in\": 10800,\n  \"interval\": 60\n}\n```\n\nThe advantage of using a refresh token instead of a new artifact type is that there's no need to re-specify all the details about how session tokens should be stored, bound, etc.\n\nIt's already the case, under OAuth, that a refresh token may be valid for certain scopes and insufficient for other scopes, e.g. if certain scopes require MFA while others do not.",
+      "createdAt": "2026-07-30T22:32:41Z",
+      "updatedAt": "2026-07-30T22:32:41Z",
       "closedAt": null,
       "comments": []
     }
@@ -2157,7 +2173,7 @@
       "labels": [],
       "body": "- Adds authors of JAG-IR\r\n- Promotes Guilherme and Dapeng to the Editor role",
       "createdAt": "2026-07-29T14:07:47Z",
-      "updatedAt": "2026-07-29T14:07:47Z",
+      "updatedAt": "2026-07-30T12:06:54Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "5d1821ee54e0b9669eeb3c76681b96f137f6893a",
@@ -2169,7 +2185,21 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABHzVbRg",
+          "commit": {
+            "abbreviatedOid": "cfe4b3e"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-30T12:06:54Z",
+          "updatedAt": "2026-07-30T12:06:54Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
