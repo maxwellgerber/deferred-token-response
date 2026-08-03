@@ -2,13 +2,11 @@
 
 
 
-Web Authorization Protocol                                 F.K. Jacobsen
-Internet-Draft                                                     Idura
-Intended status: Standards Track                    G. de Oliveira Niero
-Expires: 25 January 2027                                            Itaú
-                                                               M. Gerber
-                                                                  Twilio
-                                                            24 July 2026
+Web Authorization Protocol                     G. de Oliveira Niero, Ed.
+Internet-Draft                                                      Itaú
+Intended status: Standards Track                             D. Liu, Ed.
+Expires: 4 February 2027                                   Alibaba Group
+                                                           3 August 2026
 
 
                         Deferred Token Response
@@ -59,7 +57,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 25 January 2027.
+   This Internet-Draft will expire on 4 February 2027.
 
 Copyright Notice
 
@@ -139,7 +137,9 @@ Table of Contents
      A.3.  Identity Verification Based on Physical Evidence
      A.4.  Autonomous Agent Acting on Behalf of a User
      A.5.  Enterprise Identity Governance Approval
+   Document History
    Acknowledgments
+   Contributors
    Authors' Addresses
 
 1.  Introduction
@@ -1738,24 +1738,64 @@ A.5.  Enterprise Identity Governance Approval
    purpose-built governance system, without requiring the client to
    integrate with the governance system directly.
 
+Document History
+
+   _[[ To be removed by the RFC Editor before publication as an RFC. ]]_
+
+   -01
+
+   *  Merged with draft-parecki-oauth-jwt-grant-interaction-response.
+
+   *  Clarified behavior around publishing of
+      deferred_token_response_supported in AS metadata.
+
+   *  Clarified behavior around treatment of completion_mode when AS
+      does not support it.
+
+   *  Expanded the sender-constraint rationale to distinguish sender-
+      constraining as defense-in-depth for confidential clients from
+      sender-constraining as the primary defense for public clients.
+
+   *  Reframed the sensitivity of a deferral code in terms of
+      equivalence to a refresh token rather than to a bearer token.
+
+   -00
+
+   *  Initial version.
+
 Acknowledgments
 
    The authors would like to thank the following people for their
    contributions and reviews of this specification: Karl McGuinness,
    Mikkel Christensen, Mick Hansen, Vitor Watanabe, Ricardo Pereira
 
+Contributors
+
+   The following individuals are co-authors:
+
+   Frederik Krogsdal Jacobsen  Idura
+
+      frederik.krogsdal@idura.eu
+
+   Maxwell Gerber  Twilio
+
+      mgerber@twilio.com
+
+   Aaron Parecki  Okta
+
+      aaron@parecki.com
+
+   Brian Campbell  Ping Identity
+
+      bcampbell@pingidentity.com
+
 Authors' Addresses
 
-   Frederik Krogsdal Jacobsen
-   Idura
-   Email: frederik.krogsdal@idura.eu
-
-
-   Guilherme de Oliveira Niero
+   Guilherme de Oliveira Niero (editor)
    Itaú
    Email: guilherme.niero@itau-unibanco.com.br
 
 
-   Maxwell Gerber
-   Twilio
-   Email: mgerber@twilio.com
+   Dapeng Liu (editor)
+   Alibaba Group
+   Email: max.ldp@alibaba-inc.com
