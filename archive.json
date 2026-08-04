@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-02T01:48:54.909492+00:00",
+  "timestamp": "2026-08-04T01:26:37.533582+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -979,9 +979,17 @@
       "labels": [],
       "body": "I was reviewing this spec subsequent to IETF 126. I was trying to understand how different a deferral code is from a refresh token. They both seem to be representations of the user session, which may or may not be able to successfully obtain access tokens.\n\nThe spec presents an example:\n\n```\n{\n  \"error\": \"authorization_pending\",\n  \"deferral_code\": \"8d67dc78-7faa-4d41-aabd-67707b374255\",\n  \"expires_in\": 10800,\n  \"interval\": 60\n}\n```\n\nCouldn't the same example be written like:\n\n```\n{\n  \"error\": \"authorization_pending\",\n  \"refresh_token\": \"8d67dc78-7faa-4d41-aabd-67707b374255\",\n  \"refresh_token_expires_in\": 10800,\n  \"interval\": 60\n}\n```\n\nThe advantage of using a refresh token instead of a new artifact type is that there's no need to re-specify all the details about how session tokens should be stored, bound, etc.\n\nIt's already the case, under OAuth, that a refresh token may be valid for certain scopes and insufficient for other scopes, e.g. if certain scopes require MFA while others do not.",
       "createdAt": "2026-07-30T22:32:41Z",
-      "updatedAt": "2026-07-30T22:32:41Z",
+      "updatedAt": "2026-08-03T12:44:07Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Hi @will-bartlett,\n\nThe refresh token mechanism is bound to a grant that has already been issued, per [RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749#section-1.5:~:text=as%20%5BRFC6750%5D.-,1.5,-.%20%20Refresh%20Token%0A%0A%20%20%20Refresh). It allows a client to remain accessing scopes / resources that were previously authorized, allowing the issuance of narrowed-down tokens. \n\nThe `deferred_code` on the other hand represents an authorization request that hasn't completed yet.\n\nPerhaps I didn't fully understand your proposal, but introducing new behavior to the refresh token would demand pretty much the same complexity for handling error responses, polling strategy, pre-token endpoint code issuance - and client logic to unambiguously handle tokens representing granted access from those that are still being processed.\n\nIf you have an idea how this could be solved in a simple manner, send us a PR and we will happily review it\n\nWe also have issue #10 to decide if deferral is applicable to refresh grants or not. This would potentially need a redaction",
+          "createdAt": "2026-08-03T12:44:07Z",
+          "updatedAt": "2026-08-03T12:44:07Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -2166,24 +2174,26 @@
       "id": "PR_kwDOSeoW_M74B4Qj",
       "title": "Merge with JAG-IR",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/55",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "maxwellgerber",
       "authorAssociation": "OWNER",
       "assignees": [],
       "labels": [],
       "body": "- Adds authors of JAG-IR\r\n- Promotes Guilherme and Dapeng to the Editor role",
       "createdAt": "2026-07-29T14:07:47Z",
-      "updatedAt": "2026-07-30T12:06:54Z",
+      "updatedAt": "2026-08-03T13:14:08Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "5d1821ee54e0b9669eeb3c76681b96f137f6893a",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "max/merge-authorships",
       "headRefOid": "cfe4b3e3952c275fe555e900a6c30efd6fb611b8",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-08-03T13:04:32Z",
+      "mergedAt": "2026-08-03T13:04:32Z",
+      "mergedBy": "gniero",
+      "mergeCommit": {
+        "oid": "5301dcd1e3fea385bca5b92581299731bfeb6e86"
+      },
       "comments": [],
       "reviews": [
         {
