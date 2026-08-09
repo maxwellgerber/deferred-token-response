@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-04T01:26:37.533582+00:00",
+  "timestamp": "2026-08-09T00:55:31.036552+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -870,15 +870,15 @@
       "id": "I_kwDOSeoW_M8AAAABGg5kyw",
       "title": "Add a polling-state vocabulary for \"waiting on external interaction\"",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/48",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "mcguinness",
-      "authorAssociation": "NONE",
+      "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "## Problem\n\nThe current draft has a single non-terminal pending state, `authorization_pending`, covering every case where a deferred request has not yet resolved. That includes both:\n\n- Cases where the AS is waiting on automation (policy evaluation, attestation validation, risk analysis), and\n- Cases where the AS is waiting on external interaction by a human (manager approval, document upload, step-up authentication).\n\nA client receiving `authorization_pending` cannot tell which is happening and has no protocol-level way to surface an interaction URI to a user when one is needed. Profiles that need to convey \"an actor outside the polling client must do something\" either invent their own state vocabulary (fragmenting the substrate's state machine) or piggyback information into `error_description` (which is subject to data-minimization rules and not machine-readable).\n\nOpenID Connect's `interaction_required` error code, registered in the OAuth Extensions Error Registry, already names this concept for the authorization endpoint. There is no token-endpoint analog today.\n\n## Solution shape\n\nA second non-terminal pending state in the polling state machine, distinguishable from `authorization_pending`, that signals \"the deferred request is waiting on external interaction\" and carries a URI identifying where the interaction can take place. Constraints:\n\n- Reuses the existing `interaction_required` error name (already in the OAuth Extensions Error Registry); IANA action is a registration update to add token-endpoint usage.\n- New response parameter (`interaction_uri`) registered in the OAuth Parameters Registry.\n- Substrate-level vocabulary: the AS MAY transition between `authorization_pending` and `interaction_required` in either direction during a deferred request's lifetime; polling continues at the established `interval` in both.\n- Client behavior is non-prescriptive: a client SHOULD present the `interaction_uri` to the user when appropriate but is not required to dereference or embed it.\n- Does not change DTR's wire-shape or sender-constraining model.\n\n## Plan\n\nPR to follow.",
       "createdAt": "2026-06-24T06:01:04Z",
-      "updatedAt": "2026-06-24T06:01:04Z",
-      "closedAt": null,
+      "updatedAt": "2026-08-08T21:12:05Z",
+      "closedAt": "2026-08-08T21:12:05Z",
       "comments": []
     },
     {
@@ -2093,25 +2093,35 @@
       "id": "PR_kwDOSeoW_M7p96u1",
       "title": "Add interaction_required token-endpoint state and interaction_uri response parameter",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/49",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "mcguinness",
-      "authorAssociation": "NONE",
+      "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Resolves #48.\n\nAdds a second non-terminal pending state to the polling state machine, distinguishable from `authorization_pending`, for cases where the deferred request is waiting on external interaction. Pairs the new state with an `interaction_uri` response parameter that identifies where the interaction can take place.\n\n### What the PR adds\n\n- **New `interaction_required` error code in \u00a75.6 (Token Endpoint \u2014 Error Responses)**, alongside the existing `authorization_pending`, with clarifying text that:\n  - `authorization_pending` is for pending requests *not* waiting on external interaction.\n  - `interaction_required` is for pending requests waiting on external interaction; the response MUST include `interaction_uri`.\n  - Both are non-terminal; the AS MAY transition between them in either direction.\n  - Polling continues at the established `interval` in both states.\n- **New `interaction_uri` response parameter** documented in \u00a75.4 (Token Endpoint \u2014 Deferred Response), defined as OPTIONAL on `authorization_pending` responses and REQUIRED on `interaction_required` responses. The URI MUST be HTTPS, MUST NOT contain a fragment, and is bound to the deferral state.\n- **Example** showing an `interaction_required` response with `interaction_uri`.\n- **Cross-reference to \u00a7interaction-required-error** wherever needed.\n\n### IANA actions\n\n- **Register `interaction_uri`** in the OAuth Parameters Registry (token response location).\n- **Update the existing `interaction_required` registration** in the OAuth Extensions Error Registry (originally registered by OpenID Connect Core for authorization endpoint use) to add token endpoint response usage. Change controller note credits OIDF for the original authorization-endpoint registration and IETF for the token-endpoint addition.\n- Add OIDC-CORE to informative references (used by the registry-update note).\n\n### Why reuse `interaction_required` rather than minting a new error name\n\nOpenID Connect already registered the name for the same conceptual condition (external interaction is required). Reusing it preserves cross-spec vocabulary alignment and avoids cluttering the registry. The IANA registration update is the established mechanism for adding response locations to existing error codes.\n\n### Files changed\n\n- `draft-gerber-oauth-deferred-token-response.md`: +95/-7 lines. New error code, new parameter, new example, IANA registration update, informative reference addition.\n\n### Source\n\nAdapted from `\u00a7Deferred Error Semantics` and `\u00a7Interaction URI Parameter` in `draft-mcguinness-oauth-deferred-code-processing`.",
       "createdAt": "2026-06-24T06:02:09Z",
-      "updatedAt": "2026-06-24T06:02:09Z",
+      "updatedAt": "2026-08-08T21:12:04Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
       "headRepository": "mcguinness/deferred-token-response",
       "headRefName": "issue-48-interaction-required",
       "headRefOid": "194fa84775abe9aee496ff104b424584f0ed1374",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
+      "closedAt": "2026-08-08T21:12:04Z",
+      "mergedAt": "2026-08-08T21:12:04Z",
+      "mergedBy": "gniero",
+      "mergeCommit": {
+        "oid": "d0df1385bc69fcec4b06c6dab0313ebed0fac226"
+      },
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Merging @mcguinness PR to move on with the merge with the JAG-IR ",
+          "createdAt": "2026-08-08T21:12:00Z",
+          "updatedAt": "2026-08-08T21:12:00Z"
+        }
+      ],
       "reviews": []
     },
     {
@@ -2181,7 +2191,7 @@
       "labels": [],
       "body": "- Adds authors of JAG-IR\r\n- Promotes Guilherme and Dapeng to the Editor role",
       "createdAt": "2026-07-29T14:07:47Z",
-      "updatedAt": "2026-08-03T13:14:08Z",
+      "updatedAt": "2026-08-06T12:51:26Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "5d1821ee54e0b9669eeb3c76681b96f137f6893a",
@@ -2208,6 +2218,46 @@
           "createdAt": "2026-07-30T12:06:54Z",
           "updatedAt": "2026-07-30T12:06:54Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABIo6kfQ",
+          "commit": {
+            "abbreviatedOid": "cfe4b3e"
+          },
+          "author": "bc-pi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-08-06T12:49:11Z",
+          "updatedAt": "2026-08-06T12:49:11Z",
+          "comments": [
+            {
+              "originalPosition": 75,
+              "body": "Didn't realize you were getting demoted? ",
+              "createdAt": "2026-08-06T12:49:11Z",
+              "updatedAt": "2026-08-06T12:49:11Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABIo7q6Q",
+          "commit": {
+            "abbreviatedOid": "cfe4b3e"
+          },
+          "author": "bc-pi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-08-06T12:51:26Z",
+          "updatedAt": "2026-08-06T12:51:26Z",
+          "comments": [
+            {
+              "originalPosition": 66,
+              "body": "There's a mark/kramdown *native* way to do this with just \"contributor:\" in the frontmatter.  https://raw.githubusercontent.com/oauth-wg/oauth-identity-chaining/refs/heads/main/draft-ietf-oauth-identity-chaining.md uses it, for example ",
+              "createdAt": "2026-08-06T12:51:26Z",
+              "updatedAt": "2026-08-06T12:51:26Z"
+            }
+          ]
         }
       ]
     }
