@@ -726,10 +726,10 @@ deferral code.
 {{Section 5.2 of OAUTH-2.1}}, subject to the data-minimization rules
 of {{progress-information-in-errors}}.
 
-`interaction_uri` {#interaction-uri}
+`interaction_uri`
 : OPTIONAL on initial deferred responses and on polling responses
 carrying `authorization_pending`. REQUIRED on responses carrying
-`interaction_required` ({{interaction-required-error}}). When present,
+`interaction_required` ({{token-endpoint-error-responses}}). When present,
 the value MUST be an HTTPS URI, MUST NOT contain a fragment component,
 and identifies a location where external interaction associated with
 the deferred request can take place.
@@ -923,10 +923,10 @@ aligned with the corresponding codes in {{Section 3.5 of RFC8628}}:
   `deferral_code` and do not repeat it. In either case the client
   SHOULD continue polling at the rate established by `interval`.
 
-`interaction_required` {#interaction-required-error}
+`interaction_required`
 : The deferred request is pending and cannot continue until external
   interaction associated with the request occurs. The response MUST
-  include an `interaction_uri` parameter ({{interaction-uri}}) that
+  include an `interaction_uri` parameter ({{token-endpoint-deferred-response}}) that
   identifies a location where the interaction can take place. A client
   receiving this response SHOULD present the `interaction_uri` to the
   user (or other external actor) as appropriate for the application
@@ -1641,7 +1641,7 @@ registration in the IANA "OAuth Extensions Error Registry" defined by
 {{RFC6749}}. That error name was originally registered by {{OIDC-CORE}}
 for authorization endpoint use. This specification adds token endpoint
 response usage for the deferred-pending state defined in
-{{interaction-required-error}}.
+{{token-endpoint-error-responses}}.
 
 - Error name: `interaction_required`
 - Error usage location: authorization endpoint response, token endpoint
