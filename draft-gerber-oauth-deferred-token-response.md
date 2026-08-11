@@ -276,6 +276,77 @@ remaining flow — polling, callback, eventual token response,
 cancellation — is identical regardless of the originating grant.
 
 
+# Substrate Invariants {#substrate-invariants}
+
+This specification is structured as a substrate for deferred token
+issuance: a single continuation reference (`deferral_code`), a single
+polling state machine, and a single completion vocabulary that applies
+uniformly across originating grants. The invariants below state what
+the substrate guarantees to clients and to higher-layer profiles, and
+what those profiles MUST preserve when they extend it.
+
+## Substrate Guarantees
+
+An authorization server implementing this specification provides the
+following guarantees:
+
+1. **No authorization expansion.** A deferral does not expand
+   authorization beyond the originating request. Any authorization
+   decision reached while the request is deferred can only constrain
+   or complete the originating request.
+
+2. **Continuation through the token endpoint.** The deferred grant
+   type at the token endpoint is the sole client-initiated interface
+   for advancing a deferred request, regardless of which endpoint
+   received the originating request.
+
+3. **Sender-constraining continuity.** Sender-constraining or
+   proof-of-possession material from the originating request applies
+   to every polling request and to the final token response, as
+   defined in {{sender-constraint-requirements}}.
+
+4. **Originating request immutability through the polling grant
+   type.** Polling requests do not carry parameters that modify or
+   replace parameters from the originating request.
+
+5. **Opaque continuation reference.** Authorization servers MUST NOT
+   encode authorization, identity, or policy decisions in the
+   `deferral_code` value in a way that requires client
+   interpretation. Clients MUST treat the `deferral_code` as opaque.
+
+6. **Polling is always available as an authoritative completion
+   path.** Continuation polling at the token endpoint is always
+   available as an authoritative way to obtain the final token
+   response. Callback notification and other profile-defined delivery
+   channels MAY reduce client latency but MUST NOT replace polling
+   as the authoritative source of the issued credentials.
+
+## Profile Obligations
+
+A higher-layer profile that extends this specification MUST preserve
+the substrate guarantees above and additionally MUST satisfy the
+following obligations:
+
+A. **State distinguishability.** Profile-defined externally-observable
+   states MUST be mapped to token endpoint responses distinguishable
+   from the states defined in this specification, typically via
+   profile-defined error code values registered in the OAuth
+   Extensions Error Registry.
+
+B. **Narrowing-only parameter updates.** A profile-defined mechanism
+   for updating parameters preserved with a deferred request MUST
+   operate outside the polling grant type and MUST enforce
+   narrowing-only updates relative to the originating request.
+
+C. **No relaxation of guarantees.** A profile MAY define new
+   `completion_mode` values, new externally-observable states, new
+   response parameters, new parameter-update mechanisms, and new
+   advisory delivery channels. A profile MUST NOT relax the
+   no-authorization-expansion, sender-constraining-continuity, or
+   originating-request-immutability guarantees above. A profile MUST
+   NOT remove polling as an available authoritative completion path.
+
+
 # Client Opt-In Signaling
 
 The Deferred Token Response is an opt-in mechanism from the client's
