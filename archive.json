@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-09T00:55:31.036552+00:00",
+  "timestamp": "2026-08-11T00:56:39.421114+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -990,6 +990,142 @@
           "updatedAt": "2026-08-03T12:44:07Z"
         }
       ]
+    },
+    {
+      "number": 57,
+      "id": "I_kwDOSeoW_M8AAAABMGDLpg",
+      "title": "Add interaction_pending error code",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/57",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "## Background\n\nKarl's PR #49 introduces interaction_required and interaction_uri to DTR, but uses a single interaction_required. This may make client-side state management ambiguous. We should distinguish three states, each requiring a different client action.\n\n## Proposal: Dual-driver semantics\n\nPer discussion with Max Gerber, both the client (via interaction_uri) and the AS (via internal notification channels) can drive interaction in parallel. Either path may complete first. \n- interaction_required: client MUST initiate interaction with the user\n- interaction_pending: Either the client has already initiated interaction, or the AS has already initiated interaction. Client MAY initiate interaction again and should continue to nudge the user.\n- authorization_pending: Entirely the responsibility of the AS to finish the job.",
+      "createdAt": "2026-08-10T04:29:15Z",
+      "updatedAt": "2026-08-10T05:12:11Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "mcguinness",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thanks for filing this. The distinction you're drawing is real: `interaction_required` alone collapses \"no one has started\" and \"something is in flight,\" and a client that has redirected the user to `interaction_uri` currently can't tell whether to re-initiate on the next poll.\n\nBefore landing on a new error code, worth considering a different shape that solves the same problem without expanding the error registry every time we need a distinguishable state.\n\n**Classification field, not proliferating error codes**\n\nThe MCP spec has an adjacent proposal (SEP-2643) landing a small classification object on authorization denials, with a closed value set: `actionable` / `pending` / `terminal`, plus optional remediation hints. `reason` says *why*; the classification says *what now*.\n\nApplied to DTR as an optional field on the existing error response:\n\n```json\n{\n  \"error\": \"interaction_required\",\n  \"disposition\": \"actionable\",\n  \"interaction_uri\": \"https://as.example.com/prompt/xyz\",\n  \"interval\": 5\n}\n```\n\nOr when the AS has already initiated its own notification:\n\n```json\n{\n  \"error\": \"interaction_required\",\n  \"disposition\": \"pending\",\n  \"interaction_uri\": \"https://as.example.com/prompt/xyz\",\n  \"interval\": 5\n}\n```\n\nMapping to the three-state model in the proposal:\n\n- `interaction_required` + `disposition: actionable` \u2192 client MUST initiate.\n- `interaction_required` + `disposition: pending` \u2192 AS has initiated; client MAY nudge, need not redirect.\n- `authorization_pending` + `disposition: pending` \u2192 entirely AS-driven.\n\nSame information as three error codes, fewer error registrations. Also composes across layers: agents spanning MCP tool calls and DTR transport can consume the same classification vocabulary uniformly.\n\nUnknown-value fail-safe: a client receiving an unrecognized `disposition` value MUST treat it as `terminal`. Prevents future values from causing retry storms.\n\n**On the AS-observability question**\n\nWhichever shape wins, the same design question applies: how does the AS know the client has initiated? The AS observes its own initiation (it sent the push). It doesn't naturally observe the client's redirect to `interaction_uri`. Two options:\n\n1. Restrict \"AS has initiated\" semantics to what the AS can actually see. Simpler.\n2. Add a client-side signal (polling parameter or small endpoint). Preserves symmetric dual-driver framing.\n\nOption 1 is my lean.\n\n**Nudging cadence**\n\nIf both parties can drive interaction, guidance on nudge cadence would help avoid double-notifying the user. `interval` already gates polling; the same or a related field could gate nudges.\n\n**`interaction_uri` lifecycle**\n\nIs the URI stable across polls for the whole session, or does it change per attempt? Worth stating.\n\nIf the resolution touches PR #49, I'll adjust accordingly.",
+          "createdAt": "2026-08-10T05:12:11Z",
+          "updatedAt": "2026-08-10T05:12:11Z"
+        }
+      ]
+    },
+    {
+      "number": 58,
+      "id": "I_kwDOSeoW_M8AAAABMGxO9g",
+      "title": "Define completion_mode parameter for interactive mode",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/58",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "## Background\n\nBefore the AS can return `interaction_required`, it needs to know whether the client supports interaction, i.e., whether the client can deliver an `interaction_uri` to the user.\n\n## Proposal\n\nUse the existing `completion_mode` parameter with two values to declare client capability:\n\n| Value | Deferred Polling | Interaction |\n|---|---|---|\n| `deferred` | Yes | No |\n| `deferred_interactive` | Yes | Yes |\n",
+      "createdAt": "2026-08-10T06:38:42Z",
+      "updatedAt": "2026-08-10T06:38:42Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 59,
+      "id": "I_kwDOSeoW_M8AAAABMG2e-Q",
+      "title": "Add redirect_uri and redirect-based completion flow",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/59",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "## Background\n\nDTR currently defines a server-to-server callback mechanism for notifying clients that a deferred request is complete. This covers headless agents with a backend endpoint.\n\nHowever, browser-based agents need a front-channel mechanism to bring the user's browser back to the agent's UI after interaction completes. This mechanism is defined in JAG-IR draft: https://datatracker.ietf.org/doc/html/draft-parecki-oauth-jwt-grant-interaction-response-00#name-token-request \n\n## Proposal\n\nAdd `redirect_uri` as an OPTIONAL parameter in the initial token request, enabling redirect-based completion as a complement to polling and server-to-server callback.\n",
+      "createdAt": "2026-08-10T06:52:02Z",
+      "updatedAt": "2026-08-10T06:52:02Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 60,
+      "id": "I_kwDOSeoW_M8AAAABMG_BuA",
+      "title": "Add independent expires_in for interaction session timeout",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/60",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "## Background\n\nDTR currently defines a single `expires_in` for the deferral code lifetime. \n\n## Proposal\n\nDefine two independent lifecycles:\n\n1. Deferral time (existing `expires_in`): The overall validity of the deferred token request. After expiry, the client MUST initiate a new token request. Typically longer.\n\n2. Interaction session lifetime (new): The validity of the `interaction_uri` and associated interaction session. After expiry, the `interaction_uri` becomes invalid, but the deferral state MAY still be valid. Typically short, paired with single-use requirement.",
+      "createdAt": "2026-08-10T07:12:38Z",
+      "updatedAt": "2026-08-10T07:12:38Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 61,
+      "id": "I_kwDOSeoW_M8AAAABMHBepA",
+      "title": "Discuss renaming of the draft",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/61",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "### Requirements for a new name\n\n  - Reflects both \"deferred token issuance\" and \"user interaction\" capabilities\n  - Clear to implementers, follows IETF naming conventions",
+      "createdAt": "2026-08-10T07:18:15Z",
+      "updatedAt": "2026-08-10T07:18:15Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 62,
+      "id": "I_kwDOSeoW_M8AAAABMHCWsQ",
+      "title": "Investigate grant type compatibility with interactive mode",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/62",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "## Question\n\nWhich grant types are compatible with the interactive mode, and which are not?",
+      "createdAt": "2026-08-10T07:20:15Z",
+      "updatedAt": "2026-08-10T07:20:15Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 63,
+      "id": "I_kwDOSeoW_M8AAAABMHDizA",
+      "title": "Add use cases and example usage for interaction mode",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/63",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Add use cases and example usage covering the [JAG-IR scenarios](https://datatracker.ietf.org/doc/html/draft-parecki-oauth-jwt-grant-interaction-response-00#name-use-cases)",
+      "createdAt": "2026-08-10T07:23:08Z",
+      "updatedAt": "2026-08-10T07:24:12Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 64,
+      "id": "I_kwDOSeoW_M8AAAABMHGCpQ",
+      "title": "Add complete workflow illustration for the interaction flow",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/issues/64",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "The current DTR draft does not include a workflow diagram showing how deferred response and `interaction_required` fit together.\n\nAdd a workflow diagram showing the complete DTR + interaction flow.",
+      "createdAt": "2026-08-10T07:28:54Z",
+      "updatedAt": "2026-08-10T07:28:54Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
