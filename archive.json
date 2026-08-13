@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-11T00:56:39.421114+00:00",
+  "timestamp": "2026-08-13T01:04:53.210500+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -92,7 +92,7 @@
       ],
       "body": "The polling request only includes the `deferral_token` and the polling grant type:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L669-L700\n\nAnd the polling validation steps don't re-enforce any of the originating grant's parameters like scope, `redirect_uri` or any OIDC params:\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/487572d24861dcf388e00202bdadf4701fc28ea6/draft-oauth-deferred-token-response.md?plain=1#L702-L720\n\nTwo AS implementations can diverge on what is frozen vs. recomputed at resolution time. One could choose to e.g. snapshot `scope` at issuance, another re-evaluates current policy at the end and downscopes.\n\nI think we should state explicitly that the AS MUST snapshot the parameters that influence the eventual access token (scope, `redirect_uri`, any OIDC params, etc.) and MUST issue the eventual access token under that snapshot.\nBut it might be that your use cases are different, so I'm interested in discussing if it would be useful to be more lenient.",
       "createdAt": "2026-05-21T10:02:14Z",
-      "updatedAt": "2026-06-23T10:41:00Z",
+      "updatedAt": "2026-08-11T13:23:48Z",
       "closedAt": null,
       "comments": [
         {
@@ -108,6 +108,20 @@
           "body": "This would be a good discussion point for IETF I think.",
           "createdAt": "2026-06-23T10:41:00Z",
           "updatedAt": "2026-06-23T10:41:00Z"
+        },
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Introducing a mandatory issuance of the snapshotted parameters wouldn't conflict with AS internal policies for downscoping?\n\nAs per [RFC 6749, Section 3.3](https://datatracker.ietf.org/doc/html/rfc6749#section-3.3):\n> The authorization server MAY fully or partially ignore the scope\n   requested by the client, based on the authorization server policy or\n   the resource owner's instructions.  If the issued access token scope\n   is different from the one requested by the client, the authorization\n   server MUST include the \"scope\" response parameter to inform the\n   client of the actual scope granted.\n\nAnd [RFC 8707, Section 2.2](https://datatracker.ietf.org/doc/html/rfc8707#name-access-token-request), a more complex behavior (small portion of it below, because section is too long):\n> [...] The resource value(s) that is acceptable to an authorization server in fulfilling an access token request is at its sole discretion based on local policy or configuration. In the case of a refresh_token or authorization_code grant type request, such policy may limit the acceptable resources to those that were originally granted by the resource owner or a subset thereof.",
+          "createdAt": "2026-08-11T12:37:39Z",
+          "updatedAt": "2026-08-11T12:37:39Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Introducing a mandatory issuance of the snapshotted parameters wouldn't conflict with AS internal policies for downscoping?\n\nI don't think so, the point I was trying to make was rather that the AS should apply its policy based on the snapshotted parameters.\n\nThe issue is mostly about what happens if the AS changes policy during the polling. If you don't take a snapshot of the parameters, they are \"lost\" and the new policy can't be applied based on them.\nI don't think this prevents the AS from taking other information into account as well when deciding what to issue at the end.",
+          "createdAt": "2026-08-11T13:23:48Z",
+          "updatedAt": "2026-08-11T13:23:48Z"
         }
       ]
     },
@@ -788,15 +802,15 @@
       "id": "I_kwDOSeoW_M8AAAABGg29qA",
       "title": "Make the substrate contract for higher-layer profiles explicit",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/44",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "mcguinness",
-      "authorAssociation": "NONE",
+      "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "## Problem\n\nDTR is positioned as a foundation that higher-layer profiles can build on, but the substrate's contract with those profiles is implicit. The guarantees an authorization server provides (e.g., that polling remains available, that the continuation handle is opaque, that authorization cannot be expanded after deferral) and the obligations a profile MUST preserve when extending the spec (e.g., state distinguishability, narrowing-only parameter updates) are scattered across \u00a74, \u00a75, and \u00a79 rather than stated together.\n\nConsequences:\n\n- Profile authors re-derive the contract from scattered SHOULDs and MUSTs.\n- Different profiles can interpret the same substrate behavior differently.\n- Reviewers have no single anchor for evaluating profile drafts against the substrate.\n\n## Solution shape\n\nA single section that names the substrate's guarantees and the obligations on extending profiles, in one place. Constraints:\n\n- Restates obligations already implied elsewhere; does not introduce new normative wire content.\n- Doesn't change existing sections; pure addition.\n- No new IANA actions, no new parameters.\n- Located where readers encounter it before the wire-shape sections.\n\n## Plan\n\nPR to follow.",
       "createdAt": "2026-06-24T05:51:39Z",
-      "updatedAt": "2026-06-24T05:51:39Z",
-      "closedAt": null,
+      "updatedAt": "2026-08-11T13:23:04Z",
+      "closedAt": "2026-08-11T13:23:04Z",
       "comments": []
     },
     {
@@ -904,12 +918,12 @@
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/52",
       "state": "OPEN",
       "author": "mcguinness",
-      "authorAssociation": "NONE",
+      "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "The deferred response section requires:\n\n> The deferral code MUST contain at least 128 bits of entropy (160 bits RECOMMENDED) drawn from a cryptographically secure random source per Section 10.10 of RFC 6749.\n\nEvery example in the document uses `8d67dc78-7faa-4d41-aabd-67707b374255`, a UUIDv4. A v4 UUID carries at most 122 bits of randomness (6 bits are fixed by the version and variant fields), so the examples sit just below the MUST next to them. The format also invites implementers to reach for a UUID library, and not every UUID generator is CSPRNG-backed (v1 in particular is not random at all).\n\nThe value appears in five examples: the direct authorization endpoint deferred response, the deferred token response, the polling request, the callback notification, and the revocation request.\n\nTwo ways to resolve, depending on whether 128 was a deliberate threshold:\n\n1. Keep the requirement and replace the example value with an unpadded base64url encoding of 32 CSPRNG bytes (43 characters), for example `V7e1gP8zT2mN4qR6sW9xY3aB5cD7fH0jK2pL4uQ6vX8`, optionally with a note that UUIDs do not satisfy the requirement; or\n2. Change the entropy requirement so the examples comply, for example \"at least 120 bits\" with a note that a CSPRNG-generated UUIDv4 qualifies.",
       "createdAt": "2026-07-22T05:08:36Z",
-      "updatedAt": "2026-07-22T13:16:09Z",
+      "updatedAt": "2026-08-11T17:14:04Z",
       "closedAt": null,
       "comments": [
         {
@@ -928,10 +942,17 @@
         },
         {
           "author": "mcguinness",
-          "authorAssociation": "NONE",
+          "authorAssociation": "CONTRIBUTOR",
           "body": "The authors didn't have the privilege of having machines that read the specs and complain at you! Joke aside, it's a small nit that can get resolved before publishing. ",
           "createdAt": "2026-07-22T13:16:09Z",
           "updatedAt": "2026-07-22T13:16:09Z"
+        },
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I created a PR to address this. I suspect this may occur in deployments all here and there since it's an example in CIBA. Would it make sense to explicitly disclose in implementation / security considerations about the possible confusion about using UUIDs?",
+          "createdAt": "2026-08-11T17:13:05Z",
+          "updatedAt": "2026-08-11T17:14:04Z"
         }
       ]
     },
@@ -942,14 +963,29 @@
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/53",
       "state": "OPEN",
       "author": "mcguinness",
-      "authorAssociation": "NONE",
+      "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Polling is sender-constrained: a public client's deferral is bound to a DPoP key, and every polling request must prove possession of it. Cancellation is not. The Cancellation section revokes a deferral code at the RFC 7009 revocation endpoint, where \"the client authenticates to the revocation endpoint as required by its registered authentication method\" \u2014 which, for a public client, is no authentication at all. The revocation semantics then act whenever \"the deferral code is recognized and was issued to the authenticated client,\" a check a public client's client_id satisfies trivially since it is public information.\n\nThe result is an artifact that is sender-constrained for redemption but bearer for destruction. Anyone who observes a public client's deferral code \u2014 and the direct authorization endpoint deferral of #46 / PR 47 places it in front-channel URLs, browser history, and Referer headers under the default query response mode \u2014 can cancel the pending request. For deferrals backing long-running approval workflows, that is a denial of service that silently discards work a human may have spent days on, and the client discovers it only as `access_denied` on its next poll.\n\nSuggested fix: when a deferral is bound to a DPoP key, a revocation request presenting its deferral code MUST include a DPoP proof with that key (RFC 9449 applies at any endpoint); a request without the proof is treated as presenting an unrecognized token per rule 2 of the revocation semantics. Confidential clients are already covered by client authentication.\n\nRelated: #42 discusses the bearer-equivalence framing in the security considerations; this issue is about the revocation endpoint's behavior specifically.",
       "createdAt": "2026-07-22T05:09:40Z",
-      "updatedAt": "2026-07-22T05:09:40Z",
+      "updatedAt": "2026-08-11T20:43:48Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "That's a good point, it's a complexity we have because of the sole nature of the deferral_code and the sender-constraining concerns we have\n\nI gave a quick read through RFC 9449 but it doesn't add any consideration, and RFC 7009 has an argument that doesn't directly support future specs to evolve its security([Section 5](https://datatracker.ietf.org/doc/html/rfc7009#section-5)),  \u00b6 4:\n> The token being revoked must also belong to the requesting client.  If an attacker is able to successfully guess a public client's client_id and one of their tokens, or a private client's credentials and one of their tokens, they could do much worse damage by using the token elsewhere than by revoking it. \n\nThis DPoP enhancement in the draft sounds appropriate to me. I'm just not sure if #54 affects this somehow",
+          "createdAt": "2026-08-11T20:33:40Z",
+          "updatedAt": "2026-08-11T20:36:18Z"
+        },
+        {
+          "author": "mcguinness",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Good catch on RFC 7009 \u00a75 \u00b64. That rationale is worth engaging with head-on.\n\nThe \u00a75 argument (if the attacker has the token, they can do worse than revoke it) assumes the revocable artifact grants access. That holds for access tokens and refresh tokens: revocation destroys the credential, but an attacker holding the credential is already using it, which is worse.\n\nThe `deferral_code` doesn't fit that model. It doesn't grant access to anything; it represents pending work waiting on human approval. Presenting it at the revocation endpoint destroys that work. Presenting it at the token endpoint yields `authorization_pending` until the work resolves. Because the deferral is bound to a DPoP key the attacker doesn't have, they cannot use it to obtain a token. The only thing they *can* do with it is destroy pending work.\n\nThat inverts the \u00a75 calculus: for a `deferral_code`, revocation is the primary attack, not a lesser harm. Sender-constraining revocation is the countermeasure. RFC 9449 already defines DPoP proof-of-possession at the token endpoint (\u00a75) and at protected resources (\u00a77); extending it to the revocation endpoint applies the same mechanism to another AS endpoint that receives the bound artifact.\n\nDirect preceding-endpoint deferral (#46 / PR #47) makes this concrete. That flow places the `deferral_code` in redirect URLs, browser history, and Referer headers under `response_mode=query`. A public client's `deferral_code` is now observable to any party with URL visibility, and today they can revoke it with a well-formed request and no proof of anything.\n\nOn #54: the two are independent. #54 reduces exposure on the callback path by (potentially) removing the `deferral_code` from the callback notification. That's good defense in depth. This issue is about what the revocation endpoint should require when the `deferral_code` *is* presented. Both fixes apply regardless of the other.",
+          "createdAt": "2026-08-11T20:43:48Z",
+          "updatedAt": "2026-08-11T20:43:48Z"
+        }
+      ]
     },
     {
       "number": 54,
@@ -1003,7 +1039,7 @@
       "labels": [],
       "body": "## Background\n\nKarl's PR #49 introduces interaction_required and interaction_uri to DTR, but uses a single interaction_required. This may make client-side state management ambiguous. We should distinguish three states, each requiring a different client action.\n\n## Proposal: Dual-driver semantics\n\nPer discussion with Max Gerber, both the client (via interaction_uri) and the AS (via internal notification channels) can drive interaction in parallel. Either path may complete first. \n- interaction_required: client MUST initiate interaction with the user\n- interaction_pending: Either the client has already initiated interaction, or the AS has already initiated interaction. Client MAY initiate interaction again and should continue to nudge the user.\n- authorization_pending: Entirely the responsibility of the AS to finish the job.",
       "createdAt": "2026-08-10T04:29:15Z",
-      "updatedAt": "2026-08-10T05:12:11Z",
+      "updatedAt": "2026-08-11T13:41:35Z",
       "closedAt": null,
       "comments": [
         {
@@ -1012,6 +1048,20 @@
           "body": "Thanks for filing this. The distinction you're drawing is real: `interaction_required` alone collapses \"no one has started\" and \"something is in flight,\" and a client that has redirected the user to `interaction_uri` currently can't tell whether to re-initiate on the next poll.\n\nBefore landing on a new error code, worth considering a different shape that solves the same problem without expanding the error registry every time we need a distinguishable state.\n\n**Classification field, not proliferating error codes**\n\nThe MCP spec has an adjacent proposal (SEP-2643) landing a small classification object on authorization denials, with a closed value set: `actionable` / `pending` / `terminal`, plus optional remediation hints. `reason` says *why*; the classification says *what now*.\n\nApplied to DTR as an optional field on the existing error response:\n\n```json\n{\n  \"error\": \"interaction_required\",\n  \"disposition\": \"actionable\",\n  \"interaction_uri\": \"https://as.example.com/prompt/xyz\",\n  \"interval\": 5\n}\n```\n\nOr when the AS has already initiated its own notification:\n\n```json\n{\n  \"error\": \"interaction_required\",\n  \"disposition\": \"pending\",\n  \"interaction_uri\": \"https://as.example.com/prompt/xyz\",\n  \"interval\": 5\n}\n```\n\nMapping to the three-state model in the proposal:\n\n- `interaction_required` + `disposition: actionable` \u2192 client MUST initiate.\n- `interaction_required` + `disposition: pending` \u2192 AS has initiated; client MAY nudge, need not redirect.\n- `authorization_pending` + `disposition: pending` \u2192 entirely AS-driven.\n\nSame information as three error codes, fewer error registrations. Also composes across layers: agents spanning MCP tool calls and DTR transport can consume the same classification vocabulary uniformly.\n\nUnknown-value fail-safe: a client receiving an unrecognized `disposition` value MUST treat it as `terminal`. Prevents future values from causing retry storms.\n\n**On the AS-observability question**\n\nWhichever shape wins, the same design question applies: how does the AS know the client has initiated? The AS observes its own initiation (it sent the push). It doesn't naturally observe the client's redirect to `interaction_uri`. Two options:\n\n1. Restrict \"AS has initiated\" semantics to what the AS can actually see. Simpler.\n2. Add a client-side signal (polling parameter or small endpoint). Preserves symmetric dual-driver framing.\n\nOption 1 is my lean.\n\n**Nudging cadence**\n\nIf both parties can drive interaction, guidance on nudge cadence would help avoid double-notifying the user. `interval` already gates polling; the same or a related field could gate nudges.\n\n**`interaction_uri` lifecycle**\n\nIs the URI stable across polls for the whole session, or does it change per attempt? Worth stating.\n\nIf the resolution touches PR #49, I'll adjust accordingly.",
           "createdAt": "2026-08-10T05:12:11Z",
           "updatedAt": "2026-08-10T05:12:11Z"
+        },
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "With the `disposition` approach, we could accomodate the necessity of giving some feedback to the Client without using the `error_description` as pointed out in #14. That field is intended for troubleshooting (RFC 6749 targets it to the client developer, not end-user). What do you think about @fkj and @maxwellgerber?",
+          "createdAt": "2026-08-11T13:33:27Z",
+          "updatedAt": "2026-08-11T13:33:27Z"
+        },
+        {
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "body": "It's not clear to me if it makes sense to use the `disposition` parameter. I think for me it depends on two things:\n1. Do we think there will ever be more states than these three?\n2. Do we think the MCP people will use it in a way that conflicts with our use, thus causing confusion?",
+          "createdAt": "2026-08-11T13:41:35Z",
+          "updatedAt": "2026-08-11T13:41:35Z"
         }
       ]
     },
@@ -2177,26 +2227,42 @@
       "id": "PR_kwDOSeoW_M7p9zP4",
       "title": "Add Substrate Invariants section",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/45",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "mcguinness",
-      "authorAssociation": "NONE",
+      "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Resolves #44.\n\nAdds a new `# Substrate Invariants` section positioned after `# Overview` and before `# Client Opt-In Signaling`. The section has two subsections:\n\n- **Substrate Guarantees** \u2014 six invariants the authorization server provides (no authorization expansion; continuation through the token endpoint; sender-constraining continuity; originating request immutability through the polling grant type; opaque continuation reference; polling is always available as an authoritative completion path).\n- **Profile Obligations** \u2014 three obligations any extending profile MUST satisfy (state distinguishability, narrowing-only parameter updates, no relaxation of guarantees).\n\nPer the issue, the section restates obligations already implied by \u00a74, \u00a75, and \u00a79 rather than introducing new normative wire content. No existing text is modified. No new IANA actions or parameters.\n\n### Files changed\n\n- `draft-gerber-oauth-deferred-token-response.md`: +71 lines, new section after Overview.\n\n### Source\n\nSection adapted from `\u00a7Substrate Invariants` in `draft-mcguinness-oauth-deferred-code-processing`.",
       "createdAt": "2026-06-24T05:54:03Z",
-      "updatedAt": "2026-06-24T05:54:03Z",
+      "updatedAt": "2026-08-11T13:23:03Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "2c6e03dd0c13270ed7726800bf8fdbea861055a9",
       "headRepository": "mcguinness/deferred-token-response",
       "headRefName": "issue-44-substrate-invariants",
       "headRefOid": "9cade39d7cf0262d487a7034c0bcf8a725576c7e",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-08-11T13:23:03Z",
+      "mergedAt": "2026-08-11T13:23:03Z",
+      "mergedBy": "gniero",
+      "mergeCommit": {
+        "oid": "a37b327a2eafa75442db5b93461489df1e611a01"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABJHVX_w",
+          "commit": {
+            "abbreviatedOid": "9cade39"
+          },
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-08-11T13:19:30Z",
+          "updatedAt": "2026-08-11T13:19:30Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 47,
@@ -2396,6 +2462,60 @@
           ]
         }
       ]
+    },
+    {
+      "number": 65,
+      "id": "PR_kwDOSeoW_M79kdD1",
+      "title": "Fix example credential entropy to satisfy the 128-bit MUST",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/65",
+      "state": "OPEN",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Resolves #52.\r\n\r\n## Problem\r\n\r\nEvery example used the UUIDv4 `8d67dc78-7faa-4d41-aabd-67707b374255` as the\r\n`deferral_code`. A v4 UUID carries at most 122 bits of randomness (6 bits are\r\nfixed by the version/variant fields), so the examples sat just below the\r\n128-bit entropy MUST they appear next to. The UUID shape also nudges\r\nimplementers toward UUID libraries, not all of which are CSPRNG-backed.\r\n\r\nThe same defect existed for `client_notification_token`, whose example value\r\n`f4oirNBUlM` (~60 bits) violated its own 128-bit MUST \u2014 an instance not called\r\nout in the issue.\r\n\r\n## Change\r\n\r\nAdopt Alternative 1 from the issue (keep the entropy MUSTs, fix the examples):\r\n\r\n- **`deferral_code`** \u2192 a single shared unpadded base64url value\r\n  (`LRGidcSAeVs_xYpEDt5pNx0A0TBr7qPHbh_Se6pfdf4`, 32 CSPRNG bytes) across all\r\n  five examples, so one transaction reads end to end (deferred response \u2192\r\n  polling \u2192 callback \u2192 revocation).\r\n- **`interaction_uri`** \u2192 a **distinct** handle (`\u2026/interact/PK5U1OyuHKyiEJIg7mPXJn2J`).\r\n  The URI contents is AS-defined and out of scope for this spec; it need not embed\r\n  the `deferral_code`, and an AS that chooses to do so owns the security\r\n  measures for it.\r\n- **`client_notification_token`** \u2192 a compliant base64url value\r\n  (`5SIVTd4ZzzGctFQr4AqOGdCgyIa40-tCepd-0AcZxFY`) in both the request and the\r\n  callback `Bearer` example.\r\n\r\nNo normative text changes; examples only.",
+      "createdAt": "2026-08-11T14:40:57Z",
+      "updatedAt": "2026-08-11T17:22:56Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "issue-52-example-entropy",
+      "headRefOid": "1f93a4b82eaeaaf88c1658ec95b7383da3c338c9",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 66,
+      "id": "PR_kwDOSeoW_M79odu9",
+      "title": "Fix dangling interaction cross-references breaking the build",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/66",
+      "state": "MERGED",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": " The interaction_uri and interaction_required definitions declared their\r\n anchors on definition-list term lines ({#interaction-uri},\r\n {#interaction-required-error}). kramdown-rfc does not emit a referenceable\r\n ID for a term-line anchor, so the {{interaction-uri}} and\r\n {{interaction-required-error}} cross-references resolved to unknown IDs and\r\n xml2rfc rejected the document (\"IDREF attribute target references an unknown\r\n ID\"), failing the Editor's Copy build on main.\r\n\r\n Repoint the three references to the enclosing section anchors\r\n (token-endpoint-deferred-response, token-endpoint-error-responses) and drop\r\n the two non-functional term-line anchors.",
+      "createdAt": "2026-08-11T16:59:08Z",
+      "updatedAt": "2026-08-11T16:59:54Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "a37b327a2eafa75442db5b93461489df1e611a01",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "fix-interaction-xrefs",
+      "headRefOid": "695d0179d2957c5bb3ea5e660f66085ec5100059",
+      "closedAt": "2026-08-11T16:59:54Z",
+      "mergedAt": "2026-08-11T16:59:54Z",
+      "mergedBy": "gniero",
+      "mergeCommit": {
+        "oid": "90dfe6431b09134bc507a94825dbc0b570640a74"
+      },
+      "comments": [],
+      "reviews": []
     }
   ]
 }
