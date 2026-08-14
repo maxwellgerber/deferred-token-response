@@ -1110,6 +1110,12 @@ The client makes an HTTP POST request to the revocation endpoint per
 
 The client authenticates to the revocation endpoint as required by its
 registered authentication method per {{Section 2.4 of OAUTH-2.1}}.
+When the deferral code being revoked was bound to a DPoP key on the
+initial token request ({{sender-constraint-requirements}}), the
+revocation request MUST also carry a DPoP proof signed by that key.
+This prevents a party that has merely observed the deferral code — for
+example, in a front-channel URL, browser history, or a log — from
+cancelling the pending request.
 
 The following is a non-normative example:
 
@@ -1123,21 +1129,25 @@ token=8d67dc78-7faa-4d41-aabd-67707b374255
 &token_type_hint=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Adeferral-code
 ~~~
 
-## Revocation Semantics for Deferral Codes
+## Revocation Semantics for Deferral Codes {#revocation-semantics}
 
 Authorization servers MUST extend the revocation endpoint to accept
 deferral codes, with the following semantics:
 
-1. If the deferral code is recognized and was issued to the
-   authenticated client, the authorization server MUST atomically
+1. If the deferral code is recognized, was issued to the
+   authenticated client, and — for a deferral code bound to a DPoP key
+   — the request carries a valid DPoP proof signed by that key, the
+   authorization server MUST atomically
    transition the pending request to a cancelled state, MUST suppress
    any pending callback notification for the deferral code where
    delivery has not yet been initiated, and MUST cause subsequent
    polling requests against the deferral code to return
    `access_denied` per {{token-endpoint-error-responses}}.
 2. If the deferral code is unrecognized, was issued to a different
-   authenticated client, or has already been redeemed, cancelled, or
-   expired — the authorization server MUST return HTTP 200 OK without
+   authenticated client, has already been redeemed, cancelled, or
+   expired, or — for a deferral code bound to a DPoP key — the
+   revocation request lacks a valid DPoP proof signed by that key, the
+   authorization server MUST return HTTP 200 OK without
    modifying state. Invalid tokens do not cause an error response, per
    {{Section 2.2 of RFC7009}}.
 3. If the deferred request has already resolved successfully and the
@@ -1338,14 +1348,33 @@ When DPoP is presented on the initial token request, the
 authorization server MUST persist the JWK Thumbprint
 ({{Section 6.1 of RFC9449}}) of the proof key. Every subsequent
 polling request and revocation request that presents the resulting
-deferral code MUST carry a DPoP proof signed by the same key. The
-authorization server MUST reject any request whose proof does not
-chain to the persisted thumbprint with the error `invalid_dpop_proof`
-({{Section 7 of RFC9449}}).
+deferral code MUST carry a DPoP proof signed by the same key. On a
+polling request whose proof does not chain to the persisted
+thumbprint, the authorization server MUST reject the request with the
+error `invalid_dpop_proof` ({{Section 7 of RFC9449}}). On a revocation
+request, a missing or non-chaining proof is instead handled per
+{{revocation-semantics}}, so that revocation does not reveal whether a
+deferral code is valid.
+
+{{Section 5 of RFC7009}} argues that sender-constraining revocation
+adds little value, reasoning that an attacker able to present a token
+for revocation could instead use it elsewhere for greater harm. That
+reasoning assumes the revocable artifact grants access. A deferral
+code does not: it confers no access to any protected resource, and
+while it is bound to a DPoP key an attacker who merely observes it
+cannot redeem it for a token. The only action available to such an
+attacker is to destroy pending work by revoking it. For a deferral
+code, revocation is therefore the primary attack rather than a lesser
+harm, which is why this specification sender-constrains the revocation
+endpoint for DPoP-bound deferral codes even though RFC 7009 does not
+require it in general.
 
 When the deferred request resolves and an access token is issued in
 response to a polling request, the issued access token MUST be
 DPoP-bound to the same key, consistent with {{Section 5 of RFC9449}}.
+Any refresh token issued alongside it MUST likewise be
+sender-constrained to that key, as {{Section 5 of RFC9449}} requires
+for refresh tokens issued to public clients.
 A confidential client that did not bind the deferral code with DPoP
 likewise inherits its originating grant's access-token binding rules
 unchanged.
