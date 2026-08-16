@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-13T01:04:53.210500+00:00",
+  "timestamp": "2026-08-16T00:40:49.828523+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -786,16 +786,24 @@
       "id": "I_kwDOSeoW_M8AAAABGa4rzA",
       "title": "Deferral code as bearer-equivalent",
       "url": "https://github.com/maxwellgerber/deferred-token-response/issues/42",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "gniero",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "In \u00a710.8 we say that `deferral_token` (now `deferral_code`) is a bearer-equivalent credential\n\nhttps://github.com/maxwellgerber/deferred-token-response/blob/e6f6ac9336666c8a3d1737c8377160c89f80f233/draft-oauth-deferred-token-response.md?plain=1#L1310-L1314\n\nIt is true only for requests initiated by public clients without DPoP. Confidential clients must authenticate with its own credentials, and public clients with DPoP will count on another security layer. \n\nFor the rest of the recommendation, no objection.\n\nThis relates to the discussion in #25",
       "createdAt": "2026-06-23T12:27:08Z",
-      "updatedAt": "2026-06-23T13:05:04Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2026-08-14T17:45:09Z",
+      "closedAt": "2026-08-14T17:45:09Z",
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Merged PR #43 fixes this",
+          "createdAt": "2026-08-14T17:45:09Z",
+          "updatedAt": "2026-08-14T17:45:09Z"
+        }
+      ]
     },
     {
       "number": 44,
@@ -968,7 +976,7 @@
       "labels": [],
       "body": "Polling is sender-constrained: a public client's deferral is bound to a DPoP key, and every polling request must prove possession of it. Cancellation is not. The Cancellation section revokes a deferral code at the RFC 7009 revocation endpoint, where \"the client authenticates to the revocation endpoint as required by its registered authentication method\" \u2014 which, for a public client, is no authentication at all. The revocation semantics then act whenever \"the deferral code is recognized and was issued to the authenticated client,\" a check a public client's client_id satisfies trivially since it is public information.\n\nThe result is an artifact that is sender-constrained for redemption but bearer for destruction. Anyone who observes a public client's deferral code \u2014 and the direct authorization endpoint deferral of #46 / PR 47 places it in front-channel URLs, browser history, and Referer headers under the default query response mode \u2014 can cancel the pending request. For deferrals backing long-running approval workflows, that is a denial of service that silently discards work a human may have spent days on, and the client discovers it only as `access_denied` on its next poll.\n\nSuggested fix: when a deferral is bound to a DPoP key, a revocation request presenting its deferral code MUST include a DPoP proof with that key (RFC 9449 applies at any endpoint); a request without the proof is treated as presenting an unrecognized token per rule 2 of the revocation semantics. Confidential clients are already covered by client authentication.\n\nRelated: #42 discusses the bearer-equivalence framing in the security considerations; this issue is about the revocation endpoint's behavior specifically.",
       "createdAt": "2026-07-22T05:09:40Z",
-      "updatedAt": "2026-08-11T20:43:48Z",
+      "updatedAt": "2026-08-15T22:26:19Z",
       "closedAt": null,
       "comments": [
         {
@@ -984,6 +992,13 @@
           "body": "Good catch on RFC 7009 \u00a75 \u00b64. That rationale is worth engaging with head-on.\n\nThe \u00a75 argument (if the attacker has the token, they can do worse than revoke it) assumes the revocable artifact grants access. That holds for access tokens and refresh tokens: revocation destroys the credential, but an attacker holding the credential is already using it, which is worse.\n\nThe `deferral_code` doesn't fit that model. It doesn't grant access to anything; it represents pending work waiting on human approval. Presenting it at the revocation endpoint destroys that work. Presenting it at the token endpoint yields `authorization_pending` until the work resolves. Because the deferral is bound to a DPoP key the attacker doesn't have, they cannot use it to obtain a token. The only thing they *can* do with it is destroy pending work.\n\nThat inverts the \u00a75 calculus: for a `deferral_code`, revocation is the primary attack, not a lesser harm. Sender-constraining revocation is the countermeasure. RFC 9449 already defines DPoP proof-of-possession at the token endpoint (\u00a75) and at protected resources (\u00a77); extending it to the revocation endpoint applies the same mechanism to another AS endpoint that receives the bound artifact.\n\nDirect preceding-endpoint deferral (#46 / PR #47) makes this concrete. That flow places the `deferral_code` in redirect URLs, browser history, and Referer headers under `response_mode=query`. A public client's `deferral_code` is now observable to any party with URL visibility, and today they can revoke it with a well-formed request and no proof of anything.\n\nOn #54: the two are independent. #54 reduces exposure on the callback path by (potentially) removing the `deferral_code` from the callback notification. That's good defense in depth. This issue is about what the revocation endpoint should require when the `deferral_code` *is* presented. Both fixes apply regardless of the other.",
           "createdAt": "2026-08-11T20:43:48Z",
           "updatedAt": "2026-08-11T20:43:48Z"
+        },
+        {
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "body": "I don't like the idea that we should sender-constrain the revocation endpoint for deferral codes. Firstly, I don't like the complexity of making sender-constraining a function of token type - either it should always be required for the revocation endpoint or it should not be. Sender constraining is not required for access tokens or refresh tokens at this endpoint. Sometimes required is the worst kind of required. Secondly, I also don't like the idea of adding DPoP to an endpoint that historically has not required it.\n\nThis problem is caused by us now returning deferral codes in the URL query params as a performance optimization. #47  If so, I wonder if we would could skip that performance optimization for public clients. Always forcing public clients to invoke `/token` before they can be issued a `deferral_code` would prevent the code from being exposed on the front channel. If a confidential client's code is exposed, that isn't as bad because the attacker doesn't have access to the confidential client's authentication mechanism.",
+          "createdAt": "2026-08-15T22:26:19Z",
+          "updatedAt": "2026-08-15T22:26:19Z"
         }
       ]
     },
@@ -2516,6 +2531,54 @@
       },
       "comments": [],
       "reviews": []
+    },
+    {
+      "number": 67,
+      "id": "PR_kwDOSeoW_M7_Ov3W",
+      "title": "Sender-constrain the revocation endpoint and bind issued refresh tokens",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/67",
+      "state": "OPEN",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Resolves #12, Resolves #53\r\n\r\n**Sender-Constraint Requirements bound only the issued access token to the DPoP key:** \r\n- Added that any refresh token issued alongside it MUST likewise be sender-constrained to the same key, per RFC 9449 \u00a75 (which already requires this for public clients).\r\n\r\n**Sender-Constraint Requirements for revocation**:\r\n- A revocation presenting a DPoP-bound deferral code MUST carry a DPoP proof for that key.\r\n- Preserves the existing anti-enumeration posture of the revocation endpoint (a distinguishable invalid_dpop_proof would leak code validity).\r\n- Adds a paragraph (mentioning Section 5 of RFC7009) explaining that the deferral_code and other tokens have distinct attack surfaces, clarifying why the sender constraining matters",
+      "createdAt": "2026-08-14T17:51:51Z",
+      "updatedAt": "2026-08-15T22:23:30Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "sender-constraint-continuity",
+      "headRefOid": "a4b799bc7e1251b372b04bcf2923796acf3e6743",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This is a proposal to solve #12 pointed out by @fkj as the last fix wasn't too precise, and also #53 that @mcguinness also raised about sender constraining concerns.\r\nI'd like to get your feedback if this addressess adequately these concerns",
+          "createdAt": "2026-08-14T17:56:35Z",
+          "updatedAt": "2026-08-14T17:56:51Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABJrw6FQ",
+          "commit": {
+            "abbreviatedOid": "a4b799b"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "I agree we should sender-constrain issued refresh tokens. :+1:\n\nI don't like the idea that we should sender-constrain the revocation endpoint for deferral codes. Firstly, I don't like the complexity of making sender-constraining a function of token type - either it should always be required for the revocation endpoint or it should not be. Sometimes required is the worst kind of required. Secondly, I also don't like the idea of adding DPoP to an endpoint that historically has not required it.\n\nRefresh tokens presented at the revocation endpoint _aren't_ sender constrained today AFAIK:\n\n* RFC9449 does not explicitly mention revocation, and says that DPoP Proofs must only be presented when a refresh token is used to get a new access token\n* RFC 7009 does not require sender constraining on the revocation endpoint in general, as noted in the PR\n\nHow can we map deferral codes to the behavior of refresh tokens as closely as possible? Is #53 chiefly driven by us now returning deferral codes in the URL query params as a performance optimization? If so, I wonder if we would could skip that performance optimization for public clients. Always forcing public clients to invoke `/token` before they can be issued a `deferral_code` would prevent the code from being exposed on the front channel. If a confidential client's code is exposed, that isn't as bad because the attacker doesn't have access to the confidential client's authentication mechanism. \n",
+          "createdAt": "2026-08-15T22:23:30Z",
+          "updatedAt": "2026-08-15T22:23:30Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
