@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-20T00:37:57.123070+00:00",
+  "timestamp": "2026-08-23T00:41:24.741266+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -931,7 +931,7 @@
       "labels": [],
       "body": "The deferred response section requires:\n\n> The deferral code MUST contain at least 128 bits of entropy (160 bits RECOMMENDED) drawn from a cryptographically secure random source per Section 10.10 of RFC 6749.\n\nEvery example in the document uses `8d67dc78-7faa-4d41-aabd-67707b374255`, a UUIDv4. A v4 UUID carries at most 122 bits of randomness (6 bits are fixed by the version and variant fields), so the examples sit just below the MUST next to them. The format also invites implementers to reach for a UUID library, and not every UUID generator is CSPRNG-backed (v1 in particular is not random at all).\n\nThe value appears in five examples: the direct authorization endpoint deferred response, the deferred token response, the polling request, the callback notification, and the revocation request.\n\nTwo ways to resolve, depending on whether 128 was a deliberate threshold:\n\n1. Keep the requirement and replace the example value with an unpadded base64url encoding of 32 CSPRNG bytes (43 characters), for example `V7e1gP8zT2mN4qR6sW9xY3aB5cD7fH0jK2pL4uQ6vX8`, optionally with a note that UUIDs do not satisfy the requirement; or\n2. Change the entropy requirement so the examples comply, for example \"at least 120 bits\" with a note that a CSPRNG-generated UUIDv4 qualifies.",
       "createdAt": "2026-07-22T05:08:36Z",
-      "updatedAt": "2026-08-11T17:14:04Z",
+      "updatedAt": "2026-08-21T14:04:50Z",
       "closedAt": null,
       "comments": [
         {
@@ -961,6 +961,13 @@
           "body": "I created a PR to address this. I suspect this may occur in deployments all here and there since it's an example in CIBA. Would it make sense to explicitly disclose in implementation / security considerations about the possible confusion about using UUIDs?",
           "createdAt": "2026-08-11T17:13:05Z",
           "updatedAt": "2026-08-11T17:14:04Z"
+        },
+        {
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "body": "It looks like this has come up as an issue before: https://github.com/keycloak/keycloak/issues/38663\n\nThat gives me confidence that adding implementation / security considerations is worth doing as well.",
+          "createdAt": "2026-08-21T14:04:50Z",
+          "updatedAt": "2026-08-21T14:04:50Z"
         }
       ]
     },
@@ -1061,7 +1068,7 @@
       "labels": [],
       "body": "## Background\n\nKarl's PR #49 introduces interaction_required and interaction_uri to DTR, but uses a single interaction_required. This may make client-side state management ambiguous. We should distinguish three states, each requiring a different client action.\n\n## Proposal: Dual-driver semantics\n\nPer discussion with Max Gerber, both the client (via interaction_uri) and the AS (via internal notification channels) can drive interaction in parallel. Either path may complete first. \n- interaction_required: client MUST initiate interaction with the user\n- interaction_pending: Either the client has already initiated interaction, or the AS has already initiated interaction. Client MAY initiate interaction again and should continue to nudge the user.\n- authorization_pending: Entirely the responsibility of the AS to finish the job.",
       "createdAt": "2026-08-10T04:29:15Z",
-      "updatedAt": "2026-08-11T13:41:35Z",
+      "updatedAt": "2026-08-20T10:47:37Z",
       "closedAt": null,
       "comments": [
         {
@@ -1084,6 +1091,13 @@
           "body": "It's not clear to me if it makes sense to use the `disposition` parameter. I think for me it depends on two things:\n1. Do we think there will ever be more states than these three?\n2. Do we think the MCP people will use it in a way that conflicts with our use, thus causing confusion?",
           "createdAt": "2026-08-11T13:41:35Z",
           "updatedAt": "2026-08-11T13:41:35Z"
+        },
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> It's not clear to me if it makes sense to use the `disposition` parameter. I think for me it depends on two things:\n> \n> 1. Do we think there will ever be more states than these three?\n\nMy sense is that it is still three states.\n\n\n> 2. Do we think the MCP people will use it in a way that conflicts with our use, thus causing confusion?\n\nThis makes me lean toward following OAuth's established convention to avoid misunderstandings.\n",
+          "createdAt": "2026-08-20T10:47:37Z",
+          "updatedAt": "2026-08-20T10:47:37Z"
         }
       ]
     },
@@ -1147,9 +1161,17 @@
       "labels": [],
       "body": "### Requirements for a new name\n\n  - Reflects both \"deferred token issuance\" and \"user interaction\" capabilities\n  - Clear to implementers, follows IETF naming conventions",
       "createdAt": "2026-08-10T07:18:15Z",
-      "updatedAt": "2026-08-10T07:18:15Z",
+      "updatedAt": "2026-08-20T13:13:23Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "We could get some inspiration from the main parameter we are introducing, such as \"Grant Completion Modes\"",
+          "createdAt": "2026-08-20T13:13:22Z",
+          "updatedAt": "2026-08-20T13:13:22Z"
+        }
+      ]
     },
     {
       "number": 62,
@@ -2497,7 +2519,7 @@
       "labels": [],
       "body": "Resolves #52.\r\n\r\n## Problem\r\n\r\nEvery example used the UUIDv4 `8d67dc78-7faa-4d41-aabd-67707b374255` as the\r\n`deferral_code`. A v4 UUID carries at most 122 bits of randomness (6 bits are\r\nfixed by the version/variant fields), so the examples sat just below the\r\n128-bit entropy MUST they appear next to. The UUID shape also nudges\r\nimplementers toward UUID libraries, not all of which are CSPRNG-backed.\r\n\r\nThe same defect existed for `client_notification_token`, whose example value\r\n`f4oirNBUlM` (~60 bits) violated its own 128-bit MUST \u2014 an instance not called\r\nout in the issue.\r\n\r\n## Change\r\n\r\nAdopt Alternative 1 from the issue (keep the entropy MUSTs, fix the examples):\r\n\r\n- **`deferral_code`** \u2192 a single shared unpadded base64url value\r\n  (`LRGidcSAeVs_xYpEDt5pNx0A0TBr7qPHbh_Se6pfdf4`, 32 CSPRNG bytes) across all\r\n  five examples, so one transaction reads end to end (deferred response \u2192\r\n  polling \u2192 callback \u2192 revocation).\r\n- **`interaction_uri`** \u2192 a **distinct** handle (`\u2026/interact/PK5U1OyuHKyiEJIg7mPXJn2J`).\r\n  The URI contents is AS-defined and out of scope for this spec; it need not embed\r\n  the `deferral_code`, and an AS that chooses to do so owns the security\r\n  measures for it.\r\n- **`client_notification_token`** \u2192 a compliant base64url value\r\n  (`5SIVTd4ZzzGctFQr4AqOGdCgyIa40-tCepd-0AcZxFY`) in both the request and the\r\n  callback `Bearer` example.\r\n\r\nNo normative text changes; examples only.",
       "createdAt": "2026-08-11T14:40:57Z",
-      "updatedAt": "2026-08-11T17:22:56Z",
+      "updatedAt": "2026-08-21T14:07:15Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
@@ -2509,7 +2531,21 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABKawsww",
+          "commit": {
+            "abbreviatedOid": "1f93a4b"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "Example changes LGTM. Should we also get a security/implementation consideration to not use UUIDs? Can be done in a separate PR",
+          "createdAt": "2026-08-21T14:07:15Z",
+          "updatedAt": "2026-08-21T14:07:15Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 66,
@@ -2551,7 +2587,7 @@
       "labels": [],
       "body": "Resolves #12, Resolves #53\r\n\r\n**Sender-Constraint Requirements bound only the issued access token to the DPoP key:** \r\n- Added that any refresh token issued alongside it MUST likewise be sender-constrained to the same key, per RFC 9449 \u00a75 (which already requires this for public clients).\r\n\r\n**Sender-Constraint Requirements for revocation**:\r\n- A revocation presenting a DPoP-bound deferral code MUST carry a DPoP proof for that key.\r\n- Preserves the existing anti-enumeration posture of the revocation endpoint (a distinguishable invalid_dpop_proof would leak code validity).\r\n- Adds a paragraph (mentioning Section 5 of RFC7009) explaining that the deferral_code and other tokens have distinct attack surfaces, clarifying why the sender constraining matters",
       "createdAt": "2026-08-14T17:51:51Z",
-      "updatedAt": "2026-08-18T06:59:06Z",
+      "updatedAt": "2026-08-20T14:57:33Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
@@ -2576,6 +2612,13 @@
           "body": "Maybe it would be better to split this into two PRs? It seems to that sender-constraining the refresh tokens is uncontroversial, but sender-constraining revocation is not.\r\n\r\nI think that concerning revocation, the goal here is to avoid denial of service by someone cancelling your flows all of the time. Whether this is prevented by sender-constraining the revocation endpoint or by only transmitting it on the backchannel does not matter much to me. Though consider that since this is really long-lived, so you might still be able to exfiltrate a code from a log etc. even if it's only transmitted on the backchannel. This is a slightly different threat model than regular OAuth.",
           "createdAt": "2026-08-18T06:59:06Z",
           "updatedAt": "2026-08-18T06:59:06Z"
+        },
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This PR addresses more to revocation than refresh tokens, so I wonder if we need a new PR - instead I can just remove the refresh tokens part:\r\n\r\nCurrent paragraph on acess tokens / refresh tokens states\r\n>the issued access token MUST be\r\nDPoP-bound to the same key, consistent with {{Section 5 of RFC9449}}.\r\n\r\nand I added\r\n>Any refresh token issued alongside it MUST likewise be\r\nsender-constrained to that key, as {{Section 5 of RFC9449}} requires\r\nfor refresh tokens issued to public clients.\r\n\r\nWe probably don't need this additional text, since it just references a behavior that should be expected.",
+          "createdAt": "2026-08-20T14:57:33Z",
+          "updatedAt": "2026-08-20T14:57:33Z"
         }
       ],
       "reviews": [
