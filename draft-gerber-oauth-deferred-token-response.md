@@ -642,7 +642,7 @@ grant_type=authorization_code
 &code=SplxlOBeZQQYbYS6WxSbIA
 &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
 &completion_mode=deferred
-&client_notification_token=f4oirNBUlM
+&client_notification_token=5SIVTd4ZzzGctFQr4AqOGdCgyIa40-tCepd-0AcZxFY
 ~~~
 
 ### Initial Request Validation
@@ -757,7 +757,7 @@ Cache-Control: no-store
 
 {
   "error": "authorization_pending",
-  "deferral_code": "8d67dc78-7faa-4d41-aabd-67707b374255",
+  "deferral_code": "LRGidcSAeVs_xYpEDt5pNx0A0TBr7qPHbh_Se6pfdf4",
   "expires_in": 10800,
   "interval": 60
 }
@@ -774,9 +774,9 @@ Cache-Control: no-store
 
 {
   "error": "interaction_required",
-  "deferral_code": "8d67dc78-7faa-4d41-aabd-67707b374255",
+  "deferral_code": "LRGidcSAeVs_xYpEDt5pNx0A0TBr7qPHbh_Se6pfdf4",
   "interaction_uri":
-    "https://as.example.com/interact/8d67dc78-7faa-4d41-aabd-67707b374255",
+    "https://as.example.com/interact/PK5U1OyuHKyiEJIg7mPXJn2J",
   "expires_in": 10800,
   "interval": 60
 }
@@ -830,7 +830,7 @@ Content-Type: application/x-www-form-urlencoded
 Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
 grant_type=urn:ietf:params:oauth:grant-type:deferred
-&deferral_code=8d67dc78-7faa-4d41-aabd-67707b374255
+&deferral_code=LRGidcSAeVs_xYpEDt5pNx0A0TBr7qPHbh_Se6pfdf4
 ~~~
 
 ### Polling Request Validation
@@ -1057,11 +1057,11 @@ The following is a non-normative example with `client_notification_token`:
 ~~~
 POST /cb HTTP/1.1
 Host: client.example.com
-Authorization: Bearer f4oirNBUlM
+Authorization: Bearer 5SIVTd4ZzzGctFQr4AqOGdCgyIa40-tCepd-0AcZxFY
 Content-Type: application/json
 
 {
-  "deferral_code": "8d67dc78-7faa-4d41-aabd-67707b374255"
+  "deferral_code": "LRGidcSAeVs_xYpEDt5pNx0A0TBr7qPHbh_Se6pfdf4"
 }
 ~~~
 
@@ -1119,7 +1119,7 @@ Host: server.example.com
 Content-Type: application/x-www-form-urlencoded
 Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
-token=8d67dc78-7faa-4d41-aabd-67707b374255
+token=LRGidcSAeVs_xYpEDt5pNx0A0TBr7qPHbh_Se6pfdf4
 &token_type_hint=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Adeferral-code
 ~~~
 
