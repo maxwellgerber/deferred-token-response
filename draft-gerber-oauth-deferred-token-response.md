@@ -1777,6 +1777,40 @@ purpose-built governance system, without requiring the client to
 integrate with the governance system directly.
 
 
+## AI Agent with Browser Access
+
+An AI agent needs to perform operations on behalf of a user at a
+third-party service. The agent can redirect the user's browser to a
+consent page, then receive a callback when consent is complete.
+
+In the interaction mode, the consent page is the `interaction_uri`
+provided in the `interaction_required` response, and the agent learns
+of completion by polling with the deferral code or through a
+callback notification.
+
+## Regulatory Compliance
+
+A client requests access to sensitive data. Regulatory requirements
+mandate that explicit, auditable consent must be obtained and
+recorded before access is granted. The client sends the token request
+with `completion_mode=deferred`. The authorization server returns a
+deferred response and responds to polling with `interaction_required`
+and an `interaction_uri`. The consent is obtained and recorded at that
+location, and the authorization server resolves the deferred request
+and issues the token only after the interaction completes.
+
+## Interactive and Explicit Consent for Sensitive Operations
+
+A client requests authorization for a high-value financial
+transaction. The authorization server's policy requires the user's
+explicit consent before issuing the token. It returns a deferred
+response and responds to polling with interaction_required and an
+`interaction_uri`. The user grants (or declines) consent at the
+`interaction_uri`; the authorization server resolves the deferred
+request, and the client retrieves the result by polling.
+
+
+
 # Document History
 {:numbered="false"}
 
