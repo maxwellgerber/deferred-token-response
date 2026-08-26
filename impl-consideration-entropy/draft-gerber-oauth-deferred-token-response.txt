@@ -639,10 +639,10 @@ Table of Contents
       a Bearer token on any callback notification for that deferral code
       (see Section 7.1).  The token MUST contain sufficient entropy to
       make brute-force guessing infeasible (a minimum of 128 bits, with
-      160 bits RECOMMENDED); see Section 9.1.  A client that registers a
-      deferred_client_notification_endpoint SHOULD include a
-      client_notification_token; without one, the client cannot
-      authenticate inbound callbacks (see Section 11.4).
+      160 bits RECOMMENDED), following Section 9.1 guidelines.  A client
+      that registers a deferred_client_notification_endpoint SHOULD
+      include a client_notification_token; without one, the client
+      cannot authenticate inbound callbacks (see Section 11.4).
 
    The response to this request is one of:
 
@@ -719,7 +719,7 @@ Table of Contents
       authorization server.  The deferral code MUST contain at least 128
       bits of entropy (160 bits RECOMMENDED) drawn from a
       cryptographically secure random source per Section 10.10 of
-      [RFC6749]; see Section 9.1 for construction guidance.  The
+      [RFC6749].  See Section 9.1 for construction guidance.  The
       deferral code MUST be opaque to the client and MUST NOT carry
       meaning visible to the client.  The client uses this value when
       polling the token endpoint per Section 6.5 and, if a
@@ -1403,14 +1403,6 @@ token=LRGidcSAeVs_xYpEDt5pNx0A0TBr7qPHbh_Se6pfdf4
    client credentials it is bound to, and the sender-constraining key
    provides a further layer of protection; for a public client the
    sender-constraining key is the primary such protection.
-
-   Guessing, as distinct from theft, is addressed by the entropy
-   requirement of Section 6.4.  That requirement is only as strong as
-   the generator behind it: a deferral code drawn from a predictable or
-   under-entropic source is guessable regardless of the sender-
-   constraint, since an attacker who can produce a valid code for a
-   pending request needs only the corresponding client credentials and
-   key to redeem it.  See Section 9.1.
 
    The originating grant's credentials — for example, the authorization
    code returned to a client that requested response_type=code — are
