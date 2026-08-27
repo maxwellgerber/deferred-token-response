@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-23T00:41:24.741266+00:00",
+  "timestamp": "2026-08-27T05:44:06.452152+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -931,7 +931,7 @@
       "labels": [],
       "body": "The deferred response section requires:\n\n> The deferral code MUST contain at least 128 bits of entropy (160 bits RECOMMENDED) drawn from a cryptographically secure random source per Section 10.10 of RFC 6749.\n\nEvery example in the document uses `8d67dc78-7faa-4d41-aabd-67707b374255`, a UUIDv4. A v4 UUID carries at most 122 bits of randomness (6 bits are fixed by the version and variant fields), so the examples sit just below the MUST next to them. The format also invites implementers to reach for a UUID library, and not every UUID generator is CSPRNG-backed (v1 in particular is not random at all).\n\nThe value appears in five examples: the direct authorization endpoint deferred response, the deferred token response, the polling request, the callback notification, and the revocation request.\n\nTwo ways to resolve, depending on whether 128 was a deliberate threshold:\n\n1. Keep the requirement and replace the example value with an unpadded base64url encoding of 32 CSPRNG bytes (43 characters), for example `V7e1gP8zT2mN4qR6sW9xY3aB5cD7fH0jK2pL4uQ6vX8`, optionally with a note that UUIDs do not satisfy the requirement; or\n2. Change the entropy requirement so the examples comply, for example \"at least 120 bits\" with a note that a CSPRNG-generated UUIDv4 qualifies.",
       "createdAt": "2026-07-22T05:08:36Z",
-      "updatedAt": "2026-08-21T14:04:50Z",
+      "updatedAt": "2026-08-26T13:53:52Z",
       "closedAt": null,
       "comments": [
         {
@@ -1068,7 +1068,7 @@
       "labels": [],
       "body": "## Background\n\nKarl's PR #49 introduces interaction_required and interaction_uri to DTR, but uses a single interaction_required. This may make client-side state management ambiguous. We should distinguish three states, each requiring a different client action.\n\n## Proposal: Dual-driver semantics\n\nPer discussion with Max Gerber, both the client (via interaction_uri) and the AS (via internal notification channels) can drive interaction in parallel. Either path may complete first. \n- interaction_required: client MUST initiate interaction with the user\n- interaction_pending: Either the client has already initiated interaction, or the AS has already initiated interaction. Client MAY initiate interaction again and should continue to nudge the user.\n- authorization_pending: Entirely the responsibility of the AS to finish the job.",
       "createdAt": "2026-08-10T04:29:15Z",
-      "updatedAt": "2026-08-20T10:47:37Z",
+      "updatedAt": "2026-08-26T02:57:14Z",
       "closedAt": null,
       "comments": [
         {
@@ -1098,6 +1098,34 @@
           "body": "> It's not clear to me if it makes sense to use the `disposition` parameter. I think for me it depends on two things:\n> \n> 1. Do we think there will ever be more states than these three?\n\nMy sense is that it is still three states.\n\n\n> 2. Do we think the MCP people will use it in a way that conflicts with our use, thus causing confusion?\n\nThis makes me lean toward following OAuth's established convention to avoid misunderstandings.\n",
           "createdAt": "2026-08-20T10:47:37Z",
           "updatedAt": "2026-08-20T10:47:37Z"
+        },
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Thanks for filing this. The distinction you're drawing is real: `interaction_required` alone collapses \"no one has started\" and \"something is in flight,\" and a client that has redirected the user to `interaction_uri` currently can't tell whether to re-initiate on the next poll.\n> \n> Before landing on a new error code, worth considering a different shape that solves the same problem without expanding the error registry every time we need a distinguishable state.\n> \n> **Classification field, not proliferating error codes**\n> \n> The MCP spec has an adjacent proposal (SEP-2643) landing a small classification object on authorization denials, with a closed value set: `actionable` / `pending` / `terminal`, plus optional remediation hints. `reason` says _why_; the classification says _what now_.\n> \n> Applied to DTR as an optional field on the existing error response:\n> \n> {\n>   \"error\": \"interaction_required\",\n>   \"disposition\": \"actionable\",\n>   \"interaction_uri\": \"https://as.example.com/prompt/xyz\",\n>   \"interval\": 5\n> }\n> Or when the AS has already initiated its own notification:\n> \n> {\n>   \"error\": \"interaction_required\",\n>   \"disposition\": \"pending\",\n>   \"interaction_uri\": \"https://as.example.com/prompt/xyz\",\n>   \"interval\": 5\n> }\n> Mapping to the three-state model in the proposal:\n> \n> * `interaction_required` + `disposition: actionable` \u2192 client MUST initiate.\n> * `interaction_required` + `disposition: pending` \u2192 AS has initiated; client MAY nudge, need not redirect.\n> * `authorization_pending` + `disposition: pending` \u2192 entirely AS-driven.\n> \n> Same information as three error codes, fewer error registrations. Also composes across layers: agents spanning MCP tool calls and DTR transport can consume the same classification vocabulary uniformly.\n> \n> Unknown-value fail-safe: a client receiving an unrecognized `disposition` value MUST treat it as `terminal`. Prevents future values from causing retry storms.\n> \n> **On the AS-observability question**\n> \n> Whichever shape wins, the same design question applies: how does the AS know the client has initiated? The AS observes its own initiation (it sent the push). It doesn't naturally observe the client's redirect to `interaction_uri`. Two options:\n> \n> 1. Restrict \"AS has initiated\" semantics to what the AS can actually see. Simpler.\n> 2. Add a client-side signal (polling parameter or small endpoint). Preserves symmetric dual-driver framing.\n> \n> Option 1 is my lean.\n> \n> **Nudging cadence**\n> \n> If both parties can drive interaction, guidance on nudge cadence would help avoid double-notifying the user. `interval` already gates polling; the same or a related field could gate nudges.\n> \n> **`interaction_uri` lifecycle**\n> \nIs the URI stable across polls for the whole session, or does it change per attempt? Worth stating.\n\nIf the resolution touches PR [#49](https://github.com/maxwellgerber/deferred-token-response/pull/49), I'll adjust accordingly.\n\n@mcguinness : for the interaction_uri lifecycle, I opened another issue: https://github.com/maxwellgerber/deferred-token-response/issues/60",
+          "createdAt": "2026-08-25T09:04:32Z",
+          "updatedAt": "2026-08-25T09:04:32Z"
+        },
+        {
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "body": "> Same information as three error codes, fewer error registrations. Also composes across layers: agents spanning MCP tool calls and DTR transport can consume the same classification vocabulary uniformly.\n\nAre error registrations particularly troublesome? Registering a new parameter - with its own registry of possible values - to go from three error codes to two doesn't seem worthwhile.\n\nSimilarly, I don't think we need to match 1-1 with the `actionable / pending / terminal` wire format being explored in MCP so long as all the same states can be expressed. MCP's proposal is mapping errors returned from RS to the Client, while we're mapping errors from AS to the Client.\n\n> Option 1 is my lean.\n\nAgreed.\n\n> Is the URI stable across polls for the whole session, or does it change per attempt? Worth stating.\n\nIt would be much simpler to make it stable for the duration of the `deferral_code`. Doing so would mean we don't need an independent expires-in (#60). Since the `deferral_code` can be long-lived, this would also mean that ASs couldn't store one-time inside the `interaction_uri` (like `?interaction_token=ZZXXYY`. Means we should have some language that the AS _SHOULD_ authenticate the user before allowing them to proceed with approval of the interaction.",
+          "createdAt": "2026-08-25T14:46:45Z",
+          "updatedAt": "2026-08-25T14:46:45Z"
+        },
+        {
+          "author": "mcguinness",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I'm aligned @maxwellgerber, with only three states and AS\u2192Client scope, a third error code is roughly the same weight as a new parameter.",
+          "createdAt": "2026-08-25T16:40:49Z",
+          "updatedAt": "2026-08-25T16:40:49Z"
+        },
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I'm aligned [@maxwellgerber](https://github.com/maxwellgerber), with only three states and AS\u2192Client scope, a third error code is roughly the same weight as a new parameter.\n\nGood to see convergence here. I've opened #68  proposing the definition of `interaction_pending`. Feedback welcome there.",
+          "createdAt": "2026-08-26T02:57:14Z",
+          "updatedAt": "2026-08-26T02:57:14Z"
         }
       ]
     },
@@ -1161,7 +1189,7 @@
       "labels": [],
       "body": "### Requirements for a new name\n\n  - Reflects both \"deferred token issuance\" and \"user interaction\" capabilities\n  - Clear to implementers, follows IETF naming conventions",
       "createdAt": "2026-08-10T07:18:15Z",
-      "updatedAt": "2026-08-20T13:13:23Z",
+      "updatedAt": "2026-08-26T08:11:41Z",
       "closedAt": null,
       "comments": [
         {
@@ -1170,6 +1198,13 @@
           "body": "We could get some inspiration from the main parameter we are introducing, such as \"Grant Completion Modes\"",
           "createdAt": "2026-08-20T13:13:22Z",
           "updatedAt": "2026-08-20T13:13:22Z"
+        },
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Following that inspiration, one option: \"Deferred and Interactive Grant Completion for OAuth 2.0\"?",
+          "createdAt": "2026-08-26T03:50:44Z",
+          "updatedAt": "2026-08-26T08:11:41Z"
         }
       ]
     },
@@ -1201,9 +1236,17 @@
       "labels": [],
       "body": "Add use cases and example usage covering the [JAG-IR scenarios](https://datatracker.ietf.org/doc/html/draft-parecki-oauth-jwt-grant-interaction-response-00#name-use-cases)",
       "createdAt": "2026-08-10T07:23:08Z",
-      "updatedAt": "2026-08-10T07:24:12Z",
+      "updatedAt": "2026-08-26T09:52:24Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I've opened #69 to resolve this issue.",
+          "createdAt": "2026-08-26T09:52:24Z",
+          "updatedAt": "2026-08-26T09:52:24Z"
+        }
+      ]
     },
     {
       "number": 64,
@@ -2512,24 +2555,26 @@
       "id": "PR_kwDOSeoW_M79kdD1",
       "title": "Fix example credential entropy to satisfy the 128-bit MUST",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/65",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "gniero",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Resolves #52.\r\n\r\n## Problem\r\n\r\nEvery example used the UUIDv4 `8d67dc78-7faa-4d41-aabd-67707b374255` as the\r\n`deferral_code`. A v4 UUID carries at most 122 bits of randomness (6 bits are\r\nfixed by the version/variant fields), so the examples sat just below the\r\n128-bit entropy MUST they appear next to. The UUID shape also nudges\r\nimplementers toward UUID libraries, not all of which are CSPRNG-backed.\r\n\r\nThe same defect existed for `client_notification_token`, whose example value\r\n`f4oirNBUlM` (~60 bits) violated its own 128-bit MUST \u2014 an instance not called\r\nout in the issue.\r\n\r\n## Change\r\n\r\nAdopt Alternative 1 from the issue (keep the entropy MUSTs, fix the examples):\r\n\r\n- **`deferral_code`** \u2192 a single shared unpadded base64url value\r\n  (`LRGidcSAeVs_xYpEDt5pNx0A0TBr7qPHbh_Se6pfdf4`, 32 CSPRNG bytes) across all\r\n  five examples, so one transaction reads end to end (deferred response \u2192\r\n  polling \u2192 callback \u2192 revocation).\r\n- **`interaction_uri`** \u2192 a **distinct** handle (`\u2026/interact/PK5U1OyuHKyiEJIg7mPXJn2J`).\r\n  The URI contents is AS-defined and out of scope for this spec; it need not embed\r\n  the `deferral_code`, and an AS that chooses to do so owns the security\r\n  measures for it.\r\n- **`client_notification_token`** \u2192 a compliant base64url value\r\n  (`5SIVTd4ZzzGctFQr4AqOGdCgyIa40-tCepd-0AcZxFY`) in both the request and the\r\n  callback `Bearer` example.\r\n\r\nNo normative text changes; examples only.",
       "createdAt": "2026-08-11T14:40:57Z",
-      "updatedAt": "2026-08-21T14:07:15Z",
+      "updatedAt": "2026-08-26T17:40:32Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "issue-52-example-entropy",
       "headRefOid": "1f93a4b82eaeaaf88c1658ec95b7383da3c338c9",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-08-26T13:53:04Z",
+      "mergedAt": "2026-08-26T13:53:04Z",
+      "mergedBy": "gniero",
+      "mergeCommit": {
+        "oid": "ba931fadf63d07af5f9f5be76e6fb583be30e3a1"
+      },
       "comments": [],
       "reviews": [
         {
@@ -2636,6 +2681,143 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 68,
+      "id": "PR_kwDOSeoW_M8AAAABBBZjeA",
+      "title": "Add interaction_pending error code (closes issue #57)",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/68",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Implements the consensus in issue [#57](https://github.com/maxwellgerber/deferred-token-response/issues/57): distinguish three pending states using distinct error codes.\r\n\r\n",
+      "createdAt": "2026-08-26T02:53:34Z",
+      "updatedAt": "2026-08-26T06:38:30Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "maxpassion-patch-1",
+      "headRefOid": "638a514e0923263f58aecff98b80ce58bec6e604",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABK5e09w",
+          "commit": {
+            "abbreviatedOid": "638a514"
+          },
+          "author": "github-actions",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-08-26T02:54:02Z",
+          "updatedAt": "2026-08-26T02:54:02Z",
+          "comments": [
+            {
+              "originalPosition": 32,
+              "body": "````suggestion\n\n````",
+              "createdAt": "2026-08-26T02:54:02Z",
+              "updatedAt": "2026-08-26T02:54:02Z"
+            },
+            {
+              "originalPosition": 28,
+              "body": "````suggestion\n  Transitions among `authorization_pending`, `interaction_required` and `interaction_pending`\n````",
+              "createdAt": "2026-08-26T02:54:02Z",
+              "updatedAt": "2026-08-26T02:54:02Z"
+            },
+            {
+              "originalPosition": 16,
+              "body": "````suggestion\n\n````",
+              "createdAt": "2026-08-26T02:54:02Z",
+              "updatedAt": "2026-08-26T02:54:02Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABK6hTug",
+          "commit": {
+            "abbreviatedOid": "638a514"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "Generally looks good, but a few nitpicks.",
+          "createdAt": "2026-08-26T06:36:37Z",
+          "updatedAt": "2026-08-26T06:38:30Z",
+          "comments": [
+            {
+              "originalPosition": 24,
+              "body": "It's not really clear to me what this means. Since it's a normative statement, I think we should be more clear on what we are allowing here. Or maybe just delete it, since it is not a protocol-level thing anyway?",
+              "createdAt": "2026-08-26T06:36:37Z",
+              "updatedAt": "2026-08-26T06:38:30Z"
+            },
+            {
+              "originalPosition": 31,
+              "body": "I know this is just moving existing text, but I don't like this particular text too much. It is written as a MAY, but it's not clear who is allowed to do something. I think the actual requirement here is that clients MUST NOT treat the states as terminal and that writing it like that would make it easier to understand whether you are conformant or not.",
+              "createdAt": "2026-08-26T06:38:18Z",
+              "updatedAt": "2026-08-26T06:38:30Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 69,
+      "id": "PR_kwDOSeoW_M8AAAABBDnXeQ",
+      "title": "Add Use cases covering JAG-IR scenarios",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/69",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Add use cases from [JAG-IR use case section](https://datatracker.ietf.org/doc/html/draft-parecki-oauth-jwt-grant-interaction-response-00#name-use-cases).",
+      "createdAt": "2026-08-26T09:49:08Z",
+      "updatedAt": "2026-08-26T09:49:08Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "maxpassion-patch-2",
+      "headRefOid": "6c67db7b53a70aeba29a48c15c79132538910b04",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 70,
+      "id": "PR_kwDOSeoW_M8AAAABBG5QeQ",
+      "title": "Adds Implementation Consideration on 128-bit entropy",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/70",
+      "state": "OPEN",
+      "author": "gniero",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "## Problem\r\n\r\nWe addressed the examples of deferral codes and client notification tokens in #65, and raised the discussion whether we should include an implementation/security consideration regarding UUIDs not meeting 128-bit randomness requirement.\r\n\r\n## Changes\r\n\r\n- Adds an Implementation Consideration clarifying that 128 bits of length is not the same of 128 bits of randomness - length can be achieved by encoding, which doesn't mean that our requirement is correctly addressed. It also explains that client notification token entropy is the client's responsibility, and attempts to validate entropy on the AS's side may lead to inconsistent / imprecise checks as the AS won't know what is the client's approach to generate them. UUIDs are explicitly mentioned since they're historically present in related specs with similar requirements.\r\n- Adds references of the Implementation Consideration to the sections where the affected parameters are introduced\r\n\r\nThis being an issue originally raised by @mcguinness, I'd appreciate a review on this",
+      "createdAt": "2026-08-26T17:26:24Z",
+      "updatedAt": "2026-08-26T17:28:01Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "ba931fadf63d07af5f9f5be76e6fb583be30e3a1",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "impl-consideration-entropy",
+      "headRefOid": "0c456e8ac16104a4eb9b88e74b5c5c7591090ecb",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
