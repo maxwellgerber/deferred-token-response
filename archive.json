@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-27T05:44:06.452152+00:00",
+  "timestamp": "2026-08-30T02:23:51.173527+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -1220,9 +1220,24 @@
       "labels": [],
       "body": "## Question\n\nWhich grant types are compatible with the interactive mode, and which are not?",
       "createdAt": "2026-08-10T07:20:15Z",
-      "updatedAt": "2026-08-10T07:20:15Z",
+      "updatedAt": "2026-08-29T13:41:12Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "gniero",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Does it make sense to be handled by profiles? And letting implementers choose the combination initially?\n\nWe defined `deferred_token_response_supported` disclosure in the Authorization Server Metadata, perhaps an approach could be arrays of grant types supported per completion mode, like:\n```\n\"completion_mode_deferred_grant_types_supported\": [\"authorization_code\", \"urn:ietf:params:oauth:grant-type:token-exchange\"], \n\"completion_mode_interactive_grant_types_supported\": [\"urn:ietf:params:oauth:grant-type:jwt-bearer\"]\n```\nThere is a con: Supporting multiple grant types for multiple future completion modes makes the metadata document size increase considerably",
+          "createdAt": "2026-08-27T15:09:18Z",
+          "updatedAt": "2026-08-27T15:10:22Z"
+        },
+        {
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "body": "Whether a grant type is compatible is a property of the client, whether the client is capable of surfacing an interaction to the user, and whether the client wishes to do so at that time. If an Authorization Server doesn't support the interactive mode - or the deferred token response mode - then the Authorization Server doesn't need to return that shape of response and not much negotiation is needed. There isn't a one-size-fits-all recommendation we can roll out, which is why I'm a fan of per-transaction opting-in semantics over metadata based approaches. \n\nAs an example - I can configure a CLI tool with a Client ID and Client Secret to use the `client_credentials` grant - which is normally not an interactive grant. If I run that CLI from inside a cron job or CI pipeline, that client can't support the interactive mode. However, if I run the same CLI from an interactive terminal, then the client _can_ support the interactive mode.\n\n",
+          "createdAt": "2026-08-29T13:41:12Z",
+          "updatedAt": "2026-08-29T13:41:12Z"
+        }
+      ]
     },
     {
       "number": 63,
@@ -2779,7 +2794,7 @@
       "labels": [],
       "body": "Add use cases from [JAG-IR use case section](https://datatracker.ietf.org/doc/html/draft-parecki-oauth-jwt-grant-interaction-response-00#name-use-cases).",
       "createdAt": "2026-08-26T09:49:08Z",
-      "updatedAt": "2026-08-26T09:49:08Z",
+      "updatedAt": "2026-08-29T13:52:50Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
@@ -2791,7 +2806,21 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABLX6tpA",
+          "commit": {
+            "abbreviatedOid": "6c67db7"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "CHANGES_REQUESTED",
+          "body": "All of these use cases are around explicit human consent operations. I think we need to explain why these use cases can't be handled by the existing  `authorization_code` grant or `ciba` grant, which both capture human consent already.\n\nIn the original JAG-IR usecase, the client presents an assertion from a trusted party via Token Exchange. For various reasons, additional human approval is still needed and must be linked to that original assertion. Can we make it so that in each of these the agent is performing token exchange as a first step? That would make it clearer that existing grant types couldn't be used.",
+          "createdAt": "2026-08-29T13:52:50Z",
+          "updatedAt": "2026-08-29T13:52:50Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 70,
