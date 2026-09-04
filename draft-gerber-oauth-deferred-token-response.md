@@ -951,7 +951,7 @@ aligned with the corresponding codes in {{Section 3.5 of RFC8628}}:
   `authorization_pending`, `interaction_required`, and
   `interaction_pending` are non-terminal pending states.
   A client MUST NOT treat these states as terminal.
-  
+
 `slow_down`
 : The client is polling faster than `interval` allows. The client MUST
   increase its polling interval as described in {{token-endpoint-polling}}.
