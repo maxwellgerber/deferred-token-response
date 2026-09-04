@@ -950,7 +950,7 @@ aligned with the corresponding codes in {{Section 3.5 of RFC8628}}:
   actor), and MUST continue polling at the rate established by
   `interval`.
 
-  Transitions among `authorization_pending`, `interaction_required` and `interaction_pending` 
+`authorization_pending`, `interaction_required`, and `interaction_pending` are non-terminal pending states. A client MUST NOT treat these states as terminal and SHOULD continue polling at the rate established by `interval`. 
   MAY occur in either direction during the lifetime of a deferred
   request; all three are non-terminal pending states observed externally
   through the polling state machine.
