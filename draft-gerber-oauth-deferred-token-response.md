@@ -938,7 +938,6 @@ aligned with the corresponding codes in {{Section 3.5 of RFC8628}}:
   for authorization endpoint use; the IANA action in
   {{iana-considerations}} updates that registration to add token
   endpoint response usage.
-  
 `interaction_pending`
 : The deferred request is pending, and the external interaction
   associated with it has already been initiated, either by the client
