@@ -944,7 +944,7 @@ aligned with the corresponding codes in {{Section 3.5 of RFC8628}}:
   associated with it has already been initiated, either by the client
   (for example, the user has been directed to the `interaction_uri`)
   or by the authorization server,
-  but has not yet completed. The authorization server MUST return this
+  but has not yet completed. 
   error only when it can observe that the interaction has begun. A
   client receiving this response MAY prompt the user (or other external
   actor), and MUST continue polling at the rate established by
