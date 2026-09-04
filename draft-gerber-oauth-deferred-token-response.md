@@ -1779,36 +1779,76 @@ integrate with the governance system directly.
 
 ## AI Agent with Browser Access
 
-An AI agent needs to perform operations on behalf of a user at a
-third-party service. The agent can redirect the user's browser to a
-consent page, then receive a callback when consent is complete.
+An AI agent acts on behalf of a user at a third-party service. The
+agent and the service both use the user's identity provider for
+sign-on. The agent first performs Token Exchange ({{RFC8693}}) with
+the identity provider and receives an identity assertion for the
+user. The agent then presents the assertion in the token request of
+the Identity Assertion JWT Authorization Grant ({{ID-JAG}}) at the
+service's authorization server. No user interaction has taken place
+at the service.
 
-In the interaction mode, the consent page is the `interaction_uri`
-provided in the `interaction_required` response, and the agent learns
-of completion by polling with the deferral code or through a
-callback notification.
+The service requires the user's consent for the requested
+operation, and the assertion alone does not provide it. The grants
+that capture human consent today do not fit this request: the
+authorization code grant would require a redirect-based flow at the
+client, and CIBA would be a separate client-initiated request that
+cannot carry the assertion ({{relationship-to-ciba}}). The agent
+sends the token request with `completion_mode=deferred`. The
+authorization server returns a deferred response, and polling
+returns `interaction_required` with an `interaction_uri`. The agent
+redirects the user's browser to the `interaction_uri`, and the user
+consents there. The consent is recorded together with the
+assertion, so the approval is linked to it: this agent, this user,
+this operation. The agent learns of the result by polling with the
+deferral code, or through a callback notification.
 
 ## Regulatory Compliance
 
-A client requests access to sensitive data. Regulatory requirements
-mandate that explicit, auditable consent must be obtained and
-recorded before access is granted. The client sends the token request
-with `completion_mode=deferred`. The authorization server returns a
-deferred response and responds to polling with `interaction_required`
-and an `interaction_uri`. The consent is obtained and recorded at that
-location, and the authorization server resolves the deferred request
-and issues the token only after the interaction completes.
+A user asks their AI assistant to gather the user's sensitive
+records from a third-party service. Privacy regulation requires
+the service to obtain the user's explicit consent before disclosing
+personal data to a third party, and to keep a record of what was
+approved and under which delegation it was requested.
+
+As in the previous use case, the agent and the service both use the
+user's identity provider for sign-on. The agent first obtains an
+identity assertion for the user through Token Exchange
+({{RFC8693}}) and presents it in the token request. The assertion
+proves who the agent is and whom it acts for, but it is not the
+consent the regulation requires.
+
+The agent sends the token request with `completion_mode=deferred`.
+The authorization server returns a deferred response, and polling
+returns `interaction_required` with an `interaction_uri`. The user
+consents at that URI. The authorization server records the consent
+together with the assertion, resolves the deferred request, and
+issues the token only after the interaction completes. The consent
+record and the assertion together show which delegation requested
+the access and that the user approved it.
 
 ## Interactive and Explicit Consent for Sensitive Operations
 
-A client requests authorization for a high-value financial
-transaction. The authorization server's policy requires the user's
-explicit consent before issuing the token. It returns a deferred
-response and responds to polling with interaction_required and an
-`interaction_uri`. The user grants (or declines) consent at the
-`interaction_uri`; the authorization server resolves the deferred
-request, and the client retrieves the result by polling.
+A user asks their AI agent to pay a large invoice on their behalf.
+The payment service requires the user's explicit consent for
+high-value transactions: before issuing a token, it must show the
+user the amount and the recipient, and record the user's decision.
 
+As in the previous use cases, the agent and the service both use
+the user's identity provider for sign-on. The agent first obtains
+an identity assertion for the user through Token Exchange
+({{RFC8693}}) and presents it in the token request. The assertion
+does not cover this specific transaction.
+
+The agent sends the token request with `completion_mode=deferred`.
+The authorization server returns a deferred response, and polling
+returns `interaction_required` with an `interaction_uri`. The agent
+opens the `interaction_uri` in the browser. The user sees the
+transaction and the delegation under which it was requested, and
+grants or declines consent there. The authorization server resolves
+the deferred request, and the agent retrieves the result by
+polling. If the user declines, polling returns `access_denied` and
+the agent terminates the task.
 
 
 # Document History
