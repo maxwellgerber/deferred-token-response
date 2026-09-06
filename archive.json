@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-30T02:23:51.173527+00:00",
+  "timestamp": "2026-09-06T01:53:48.843791+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -2709,13 +2709,13 @@
       "labels": [],
       "body": "Implements the consensus in issue [#57](https://github.com/maxwellgerber/deferred-token-response/issues/57): distinguish three pending states using distinct error codes.\r\n\r\n",
       "createdAt": "2026-08-26T02:53:34Z",
-      "updatedAt": "2026-08-26T06:38:30Z",
+      "updatedAt": "2026-09-05T13:54:06Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "maxpassion-patch-1",
-      "headRefOid": "638a514e0923263f58aecff98b80ce58bec6e604",
+      "headRefOid": "e15cdeec9b1f056560033bc352892645438ef763",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -2779,6 +2779,193 @@
               "updatedAt": "2026-08-26T06:38:30Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABLEZ2TQ",
+          "commit": {
+            "abbreviatedOid": "638a514"
+          },
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-08-27T06:17:28Z",
+          "updatedAt": "2026-09-04T13:55:34Z",
+          "comments": [
+            {
+              "originalPosition": 21,
+              "body": "```suggestion\n  or by the authorization server,\n```",
+              "createdAt": "2026-08-27T06:17:29Z",
+              "updatedAt": "2026-09-04T13:55:34Z"
+            },
+            {
+              "originalPosition": 22,
+              "body": "```suggestion\n  but has not yet completed. \n```",
+              "createdAt": "2026-08-27T06:18:17Z",
+              "updatedAt": "2026-09-04T13:55:34Z"
+            },
+            {
+              "originalPosition": 23,
+              "body": "```suggestion\n   A\n```",
+              "createdAt": "2026-08-27T06:18:58Z",
+              "updatedAt": "2026-09-04T13:55:34Z"
+            },
+            {
+              "originalPosition": 24,
+              "body": "Agreed, simplified. Please review the pending changes.",
+              "createdAt": "2026-08-27T06:23:43Z",
+              "updatedAt": "2026-09-04T13:55:34Z"
+            },
+            {
+              "originalPosition": 28,
+              "body": "```suggestion\n`authorization_pending`, `interaction_required`, and `interaction_pending` are non-terminal pending states. A client MUST NOT treat these states as terminal and SHOULD continue polling at the rate established by `interval`. \n```",
+              "createdAt": "2026-08-27T06:59:19Z",
+              "updatedAt": "2026-09-04T13:55:34Z"
+            },
+            {
+              "originalPosition": 31,
+              "body": "Revised. Please review the changes.",
+              "createdAt": "2026-08-27T07:01:50Z",
+              "updatedAt": "2026-09-04T13:55:34Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABMM9d_A",
+          "commit": {
+            "abbreviatedOid": "a583e09"
+          },
+          "author": "github-actions",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-09-04T13:59:09Z",
+          "updatedAt": "2026-09-04T13:59:09Z",
+          "comments": [
+            {
+              "originalPosition": 28,
+              "body": "````suggestion\n  Transitions among `authorization_pending`, `interaction_required` and `interaction_pending`\n````",
+              "createdAt": "2026-09-04T13:59:09Z",
+              "updatedAt": "2026-09-04T13:59:09Z"
+            },
+            {
+              "originalPosition": 22,
+              "body": "````suggestion\n  but has not yet completed.\n````",
+              "createdAt": "2026-09-04T13:59:09Z",
+              "updatedAt": "2026-09-04T13:59:09Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABMM9egw",
+          "commit": {
+            "abbreviatedOid": "711ca8c"
+          },
+          "author": "github-actions",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-09-04T13:59:10Z",
+          "updatedAt": "2026-09-04T13:59:10Z",
+          "comments": [
+            {
+              "originalPosition": 28,
+              "body": "````suggestion\n  Transitions among `authorization_pending`, `interaction_required` and `interaction_pending`\n````",
+              "createdAt": "2026-09-04T13:59:10Z",
+              "updatedAt": "2026-09-04T13:59:10Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABMM9mPw",
+          "commit": {
+            "abbreviatedOid": "38d8840"
+          },
+          "author": "github-actions",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-09-04T13:59:23Z",
+          "updatedAt": "2026-09-04T13:59:24Z",
+          "comments": [
+            {
+              "originalPosition": 32,
+              "body": "````suggestion\n\n````",
+              "createdAt": "2026-09-04T13:59:23Z",
+              "updatedAt": "2026-09-04T13:59:24Z"
+            },
+            {
+              "originalPosition": 28,
+              "body": "````suggestion\n`authorization_pending`, `interaction_required`, and `interaction_pending` are non-terminal pending states. A client MUST NOT treat these states as terminal and SHOULD continue polling at the rate established by `interval`.\n````",
+              "createdAt": "2026-09-04T13:59:23Z",
+              "updatedAt": "2026-09-04T13:59:24Z"
+            },
+            {
+              "originalPosition": 22,
+              "body": "````suggestion\n  but has not yet completed.\n````",
+              "createdAt": "2026-09-04T13:59:23Z",
+              "updatedAt": "2026-09-04T13:59:24Z"
+            },
+            {
+              "originalPosition": 16,
+              "body": "````suggestion\n\n````",
+              "createdAt": "2026-09-04T13:59:24Z",
+              "updatedAt": "2026-09-04T13:59:24Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABMM9oeQ",
+          "commit": {
+            "abbreviatedOid": "ffeea31"
+          },
+          "author": "github-actions",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-09-04T13:59:27Z",
+          "updatedAt": "2026-09-04T13:59:27Z",
+          "comments": [
+            {
+              "originalPosition": 28,
+              "body": "````suggestion\n  Transitions among `authorization_pending`, `interaction_required` and `interaction_pending`\n````",
+              "createdAt": "2026-09-04T13:59:27Z",
+              "updatedAt": "2026-09-04T13:59:27Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABMM9x5A",
+          "commit": {
+            "abbreviatedOid": "233bf0b"
+          },
+          "author": "github-actions",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-09-04T13:59:42Z",
+          "updatedAt": "2026-09-04T13:59:42Z",
+          "comments": [
+            {
+              "originalPosition": 21,
+              "body": "````suggestion\n  but has not yet completed.\n````",
+              "createdAt": "2026-09-04T13:59:42Z",
+              "updatedAt": "2026-09-04T13:59:42Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABMUOXpg",
+          "commit": {
+            "abbreviatedOid": "e15cdee"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-09-05T13:54:06Z",
+          "updatedAt": "2026-09-05T13:54:06Z",
+          "comments": []
         }
       ]
     },
@@ -2794,18 +2981,26 @@
       "labels": [],
       "body": "Add use cases from [JAG-IR use case section](https://datatracker.ietf.org/doc/html/draft-parecki-oauth-jwt-grant-interaction-response-00#name-use-cases).",
       "createdAt": "2026-08-26T09:49:08Z",
-      "updatedAt": "2026-08-29T13:52:50Z",
+      "updatedAt": "2026-09-05T13:52:57Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "maxpassion-patch-2",
-      "headRefOid": "6c67db7b53a70aeba29a48c15c79132538910b04",
+      "headRefOid": "aed362a89c0d16b5af445c6fe61469f1ad2b4d76",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> All of these use cases are around explicit human consent operations. I think we need to explain why these use cases can't be handled by the existing `authorization_code` grant or `ciba` grant, which both capture human consent already.\r\n> \r\n> In the original JAG-IR usecase, the client presents an assertion from a trusted party via Token Exchange. For various reasons, additional human approval is still needed and must be linked to that original assertion. Can we make it so that in each of these the agent is performing token exchange as a first step? That would make it clearer that existing grant types couldn't be used.\r\n\r\nUpdated, each use case now starts from the JAG-IR scenario",
+          "createdAt": "2026-09-04T13:44:08Z",
+          "updatedAt": "2026-09-04T13:44:08Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOSeoW_M8AAAABLX6tpA",
@@ -2818,6 +3013,19 @@
           "body": "All of these use cases are around explicit human consent operations. I think we need to explain why these use cases can't be handled by the existing  `authorization_code` grant or `ciba` grant, which both capture human consent already.\n\nIn the original JAG-IR usecase, the client presents an assertion from a trusted party via Token Exchange. For various reasons, additional human approval is still needed and must be linked to that original assertion. Can we make it so that in each of these the agent is performing token exchange as a first step? That would make it clearer that existing grant types couldn't be used.",
           "createdAt": "2026-08-29T13:52:50Z",
           "updatedAt": "2026-08-29T13:52:50Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABMUOGvQ",
+          "commit": {
+            "abbreviatedOid": "aed362a"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-09-05T13:52:56Z",
+          "updatedAt": "2026-09-05T13:52:56Z",
           "comments": []
         }
       ]
