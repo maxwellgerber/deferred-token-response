@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-09-06T01:53:48.843791+00:00",
+  "timestamp": "2026-09-08T02:02:23.264126+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -1141,9 +1141,17 @@
       "labels": [],
       "body": "## Background\n\nBefore the AS can return `interaction_required`, it needs to know whether the client supports interaction, i.e., whether the client can deliver an `interaction_uri` to the user.\n\n## Proposal\n\nUse the existing `completion_mode` parameter with two values to declare client capability:\n\n| Value | Deferred Polling | Interaction |\n|---|---|---|\n| `deferred` | Yes | No |\n| `deferred_interactive` | Yes | Yes |\n",
       "createdAt": "2026-08-10T06:38:42Z",
-      "updatedAt": "2026-08-10T06:38:42Z",
+      "updatedAt": "2026-09-07T08:36:04Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I've opened #71  to resolve this issue.",
+          "createdAt": "2026-09-07T08:36:04Z",
+          "updatedAt": "2026-09-07T08:36:04Z"
+        }
+      ]
     },
     {
       "number": 59,
@@ -3055,6 +3063,53 @@
       "mergeCommit": null,
       "comments": [],
       "reviews": []
+    },
+    {
+      "number": 71,
+      "id": "PR_kwDOSeoW_M8AAAABCfN7_A",
+      "title": "Add deferred_interactive completion mode value (closes #58)",
+      "url": "https://github.com/maxwellgerber/deferred-token-response/pull/71",
+      "state": "OPEN",
+      "author": "maxpassion",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Resolves #58.",
+      "createdAt": "2026-09-07T08:29:09Z",
+      "updatedAt": "2026-09-07T08:35:40Z",
+      "baseRepository": "maxwellgerber/deferred-token-response",
+      "baseRefName": "main",
+      "baseRefOid": "ba931fadf63d07af5f9f5be76e6fb583be30e3a1",
+      "headRepository": "maxwellgerber/deferred-token-response",
+      "headRefName": "maxpassion-patch-3",
+      "headRefOid": "38537969de68014f5c4df8e4cef7e9b4136abe48",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABMcEXpg",
+          "commit": {
+            "abbreviatedOid": "fecfd0d"
+          },
+          "author": "github-actions",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-09-07T08:29:36Z",
+          "updatedAt": "2026-09-07T08:29:36Z",
+          "comments": [
+            {
+              "originalPosition": 9,
+              "body": "````suggestion\n  specification defines two values, `deferred` and `deferred_interactive`.\n````",
+              "createdAt": "2026-09-07T08:29:36Z",
+              "updatedAt": "2026-09-07T08:29:36Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
