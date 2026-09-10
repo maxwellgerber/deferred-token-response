@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-09-08T02:02:23.264126+00:00",
+  "timestamp": "2026-09-10T02:04:24.177356+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -2717,7 +2717,7 @@
       "labels": [],
       "body": "Implements the consensus in issue [#57](https://github.com/maxwellgerber/deferred-token-response/issues/57): distinguish three pending states using distinct error codes.\r\n\r\n",
       "createdAt": "2026-08-26T02:53:34Z",
-      "updatedAt": "2026-09-05T13:54:06Z",
+      "updatedAt": "2026-09-09T09:24:25Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
@@ -2728,7 +2728,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Thanks @maxwellgerber for the review. \r\n@fkj I've addressed your comments in the revisions. Please take another look when you have time.",
+          "createdAt": "2026-09-09T09:24:25Z",
+          "updatedAt": "2026-09-09T09:24:25Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOSeoW_M8AAAABK5e09w",
@@ -2982,24 +2990,26 @@
       "id": "PR_kwDOSeoW_M8AAAABBDnXeQ",
       "title": "Add Use cases covering JAG-IR scenarios",
       "url": "https://github.com/maxwellgerber/deferred-token-response/pull/69",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "maxpassion",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Add use cases from [JAG-IR use case section](https://datatracker.ietf.org/doc/html/draft-parecki-oauth-jwt-grant-interaction-response-00#name-use-cases).",
       "createdAt": "2026-08-26T09:49:08Z",
-      "updatedAt": "2026-09-05T13:52:57Z",
+      "updatedAt": "2026-09-09T16:28:04Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
       "headRepository": "maxwellgerber/deferred-token-response",
       "headRefName": "maxpassion-patch-2",
       "headRefOid": "aed362a89c0d16b5af445c6fe61469f1ad2b4d76",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-09-09T16:27:43Z",
+      "mergedAt": "2026-09-09T16:27:43Z",
+      "mergedBy": "gniero",
+      "mergeCommit": {
+        "oid": "2d9e5e580152e2749085d7a296d27059f9cfa759"
+      },
       "comments": [
         {
           "author": "maxpassion",
@@ -3007,6 +3017,13 @@
           "body": "> All of these use cases are around explicit human consent operations. I think we need to explain why these use cases can't be handled by the existing `authorization_code` grant or `ciba` grant, which both capture human consent already.\r\n> \r\n> In the original JAG-IR usecase, the client presents an assertion from a trusted party via Token Exchange. For various reasons, additional human approval is still needed and must be linked to that original assertion. Can we make it so that in each of these the agent is performing token exchange as a first step? That would make it clearer that existing grant types couldn't be used.\r\n\r\nUpdated, each use case now starts from the JAG-IR scenario",
           "createdAt": "2026-09-04T13:44:08Z",
           "updatedAt": "2026-09-04T13:44:08Z"
+        },
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Thanks @maxwellgerber for the review! @gniero  Could you merge this when you have a chance?",
+          "createdAt": "2026-09-09T09:08:52Z",
+          "updatedAt": "2026-09-09T09:08:52Z"
         }
       ],
       "reviews": [
