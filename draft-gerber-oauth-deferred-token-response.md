@@ -57,7 +57,9 @@ normative:
   OAUTH-2.1: I-D.draft-ietf-oauth-v2-1
 
 informative:
+  RFC4648:
   RFC6749:
+  RFC9562:
   ID-JAG: I-D.draft-ietf-oauth-identity-assertion-authz-grant
   FIPA: I-D.draft-ietf-oauth-first-party-apps
   OIDC-CORE:
@@ -614,10 +616,10 @@ The client MAY also include the following parameter:
   notification for that deferral code (see {{the-callback-request}}).
   The token MUST contain sufficient entropy to make brute-force
   guessing infeasible (a minimum of 128 bits, with 160 bits
-  RECOMMENDED). A client that registers a
-  `deferred_client_notification_endpoint` SHOULD include a
-  `client_notification_token`; without one, the client cannot
-  authenticate inbound callbacks (see {{callback-endpoint-validation}}).
+  RECOMMENDED), following {{credential-generation}} guidelines.
+  A client that registers a `deferred_client_notification_endpoint`
+  SHOULD include a `client_notification_token`; without one, the client
+  cannot authenticate inbound callbacks (see {{callback-endpoint-validation}}).
 
 The response to this request is one of:
 
@@ -645,7 +647,7 @@ grant_type=authorization_code
 &client_notification_token=5SIVTd4ZzzGctFQr4AqOGdCgyIa40-tCepd-0AcZxFY
 ~~~
 
-### Initial Request Validation
+### Initial Request Validation {#initial-request-validation}
 
 The authorization server MUST validate the request as it would without
 DTR, with the following additions:
@@ -695,7 +697,8 @@ the following parameters:
 : REQUIRED. The deferral code issued by the authorization server.
 The deferral code MUST contain at least 128 bits of entropy
 (160 bits RECOMMENDED) drawn from a cryptographically secure
-random source per {{Section 10.10 of RFC6749}}. The deferral
+random source per {{Section 10.10 of RFC6749}}. See
+{{credential-generation}} for construction guidance. The deferral
 code MUST be opaque to the client and MUST NOT carry meaning
 visible to the client.
 The client uses this value when polling the token endpoint per
@@ -1195,6 +1198,45 @@ successful cancellation. Clients that skip this check risk silently
 failing to cancel a pending deferred request.
 
 # Implementation Considerations
+
+## Generating Deferral Codes and Notification Tokens {#credential-generation}
+
+The entropy requirements in {{token-endpoint-deferred-response}} and
+{{token-endpoint-initial-request}} constrain how unpredictable the
+value is, not the length in its encoded form. An implementation
+satisfies them by drawing the required number of bits from a
+cryptographically secure random source and encoding the result.
+A conforming construction is to draw 16 octets (20 octets to meet the
+RECOMMENDED 160 bits) from a cryptographically secure random source
+and encode them with base64url without padding
+({{Section 5 of RFC4648}}).
+
+A recurring source of non-compliance is generating these credentials
+with a UUID library. A version 4 UUID is 128 bits wide but carries at
+most 122 bits of randomness, because 6 bits are fixed by the version
+and variant fields ({{Section 5.4 of RFC9562}}), falling below the
+128-bit minimum. Other UUID versions are weaker still for this
+purpose: versions 1 and 6 encode a timestamp and a node identifier,
+and version 7 spends 48 bits on a timestamp. Neither {{RFC9562}} nor the
+typical language runtime guarantees that a UUID's random bits come from
+a cryptographically secure source. Implementations SHOULD NOT use UUIDs
+of any version as deferral codes or `client_notification_token` values.
+
+An authorization server MAY derive the deferral code from server-side
+state rather than issue a random value directly — for example, by
+encrypting a record of the pending request. Such a construction MUST
+remain opaque to the client per
+{{token-endpoint-deferred-response}}, MUST be integrity protected, and
+MUST incorporate at least 128 bits of cryptographically secure
+randomness that an attacker cannot predict from observed values; the
+encoded length of the resulting value is not evidence that this holds.
+
+An authorization server cannot verify the entropy of a
+`client_notification_token`, because the value is opaque to it. Any
+check applied under {{initial-request-validation}} approximates the
+requirement rather than verifying it, and such checks vary from server
+to server. Satisfying the entropy requirement remains the client's
+obligation.
 
 ## Polling and Callback Together
 
