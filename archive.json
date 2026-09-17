@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-09-10T02:04:24.177356+00:00",
+  "timestamp": "2026-09-17T02:23:56.349397+00:00",
   "repo": "maxwellgerber/deferred-token-response",
   "labels": [
     {
@@ -2717,7 +2717,7 @@
       "labels": [],
       "body": "Implements the consensus in issue [#57](https://github.com/maxwellgerber/deferred-token-response/issues/57): distinguish three pending states using distinct error codes.\r\n\r\n",
       "createdAt": "2026-08-26T02:53:34Z",
-      "updatedAt": "2026-09-09T09:24:25Z",
+      "updatedAt": "2026-09-16T12:32:38Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "90dfe6431b09134bc507a94825dbc0b570640a74",
@@ -2735,6 +2735,13 @@
           "body": "Thanks @maxwellgerber for the review. \r\n@fkj I've addressed your comments in the revisions. Please take another look when you have time.",
           "createdAt": "2026-09-09T09:24:25Z",
           "updatedAt": "2026-09-09T09:24:25Z"
+        },
+        {
+          "author": "maxpassion",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Thanks @maxwellgerber for the review. @fkj I've addressed your comments in the revisions. Please take another look when you have time.\r\n\r\n@fkj , if you have no further comments I think this is ready to land. \r\n\r\n@gniero, shall we merge, or would you prefer to wait for Frederik's re-review? Happy either way.",
+          "createdAt": "2026-09-15T14:14:01Z",
+          "updatedAt": "2026-09-15T14:14:01Z"
         }
       ],
       "reviews": [
@@ -2982,6 +2989,19 @@
           "createdAt": "2026-09-05T13:54:06Z",
           "updatedAt": "2026-09-05T13:54:06Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABN0uLrw",
+          "commit": {
+            "abbreviatedOid": "e15cdee"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-09-16T12:32:38Z",
+          "updatedAt": "2026-09-16T12:32:38Z",
+          "comments": []
         }
       ]
     },
@@ -3067,7 +3087,7 @@
       "labels": [],
       "body": "## Problem\r\n\r\nWe addressed the examples of deferral codes and client notification tokens in #65, and raised the discussion whether we should include an implementation/security consideration regarding UUIDs not meeting 128-bit randomness requirement.\r\n\r\n## Changes\r\n\r\n- Adds an Implementation Consideration clarifying that 128 bits of length is not the same of 128 bits of randomness - length can be achieved by encoding, which doesn't mean that our requirement is correctly addressed. It also explains that client notification token entropy is the client's responsibility, and attempts to validate entropy on the AS's side may lead to inconsistent / imprecise checks as the AS won't know what is the client's approach to generate them. UUIDs are explicitly mentioned since they're historically present in related specs with similar requirements.\r\n- Adds references of the Implementation Consideration to the sections where the affected parameters are introduced\r\n\r\nThis being an issue originally raised by @mcguinness, I'd appreciate a review on this",
       "createdAt": "2026-08-26T17:26:24Z",
-      "updatedAt": "2026-08-26T17:28:01Z",
+      "updatedAt": "2026-09-16T14:43:59Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "ba931fadf63d07af5f9f5be76e6fb583be30e3a1",
@@ -3078,8 +3098,50 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "comments": [
+        {
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "body": "I agree we don't need all the details, but I think that a note that UUID explicitly does not satisfy the entropy requirements (and should not be used) would be appropriate. See https://github.com/keycloak/keycloak/issues/38663 as an example of UUID being used in ways that interfere with other standards.",
+          "createdAt": "2026-09-16T14:42:47Z",
+          "updatedAt": "2026-09-16T14:42:47Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABN1BE3w",
+          "commit": {
+            "abbreviatedOid": "0c456e8"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "I'm not sure we need all of the details about UUIDs etc. There are also a lot of other things to consider, e.g. preserving entropy under load and avoiding entropy-reducing encodings.\nI think the best approach is to just say that there must be sufficient entropy without going too deeply into all of the reasons it could fail.",
+          "createdAt": "2026-09-16T13:00:26Z",
+          "updatedAt": "2026-09-16T13:00:26Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABN2MPCg",
+          "commit": {
+            "abbreviatedOid": "0c456e8"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-09-16T14:43:58Z",
+          "updatedAt": "2026-09-16T14:43:59Z",
+          "comments": [
+            {
+              "originalPosition": 71,
+              "body": "I don't think we need these last two paras",
+              "createdAt": "2026-09-16T14:43:59Z",
+              "updatedAt": "2026-09-16T14:43:59Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 71,
@@ -3093,7 +3155,7 @@
       "labels": [],
       "body": "Resolves #58.",
       "createdAt": "2026-09-07T08:29:09Z",
-      "updatedAt": "2026-09-07T08:35:40Z",
+      "updatedAt": "2026-09-16T12:31:03Z",
       "baseRepository": "maxwellgerber/deferred-token-response",
       "baseRefName": "main",
       "baseRefOid": "ba931fadf63d07af5f9f5be76e6fb583be30e3a1",
@@ -3104,7 +3166,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "body": "Whoops, wrong Github account",
+          "createdAt": "2026-09-15T15:13:07Z",
+          "updatedAt": "2026-09-15T15:13:07Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOSeoW_M8AAAABMcEXpg",
@@ -3125,6 +3195,45 @@
               "updatedAt": "2026-09-07T08:29:36Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABNp53Pw",
+          "commit": {
+            "abbreviatedOid": "3853796"
+          },
+          "author": "max-stytch",
+          "authorAssociation": "NONE",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-09-15T14:25:15Z",
+          "updatedAt": "2026-09-15T14:25:15Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABNqeXLg",
+          "commit": {
+            "abbreviatedOid": "3853796"
+          },
+          "author": "maxwellgerber",
+          "authorAssociation": "OWNER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-09-15T15:13:15Z",
+          "updatedAt": "2026-09-15T15:13:15Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOSeoW_M8AAAABN0tPzQ",
+          "commit": {
+            "abbreviatedOid": "3853796"
+          },
+          "author": "fkj",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-09-16T12:31:03Z",
+          "updatedAt": "2026-09-16T12:31:03Z",
+          "comments": []
         }
       ]
     }
