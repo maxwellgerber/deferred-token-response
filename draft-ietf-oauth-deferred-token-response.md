@@ -3,7 +3,7 @@ title: "Deferred Token Response"
 abbrev: "DTR"
 category: std
 
-docname: draft-gerber-oauth-deferred-token-response-latest
+docname: draft-ietf-oauth-deferred-token-response-latest
 submissiontype: IETF  # also: "independent", "editorial", "IAB", or "IRTF"
 number:
 date:
@@ -21,8 +21,8 @@ venue:
   type: Working Group
   mail: oauth@ietf.org
   arch: https://mailarchive.ietf.org/arch/browse/oauth/
-  github: "maxwellgerber/deferred-token-response"
-  latest: "https://maxwellgerber.github.io/deferred-token-response/draft-gerber-oauth-deferred-token-response.html"
+  github: "oauth-wg/deferred-token-response"
+  latest: "https://datatracker.ietf.org/doc/draft-ietf-oauth-deferred-token-response/"
 
 author:
  -
